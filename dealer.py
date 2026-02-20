@@ -1,26 +1,44 @@
 import random
 
-class Card:
+class Deck:
+    
     RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"]
     SUITS = ["c", "d", 'h', "s"]
+
+    @staticmethod
+    def generate_deck():
+        deck = []
+        for rank in Deck.RANKS:
+            for suit in Deck.SUITS:
+                deck.append(Card(f"{rank}{suit}"))
+        return deck
+
+    def __init__(self):
+        self.cards = Deck.generate_deck()
+        
+    @staticmethod
+    def shuffle(deck):
+        random.shuffle(deck)
+        return deck
+
+    @staticmethod
+    def pop(deck, amount=1):
+        popped = deck[len(deck) - amount:]
+        deck = deck[: - 1 * amount]
+        return deck, popped
+
+class Card:
 
     def __init__(self, card):
         self.rank = card[0]
         self.suit = card[1]
-        self.value = Card.RANKS.index(self.rank)
+        self.value = Deck.RANKS.index(self.rank)
 
     def __str__(self):
         return f"{self.rank}{self.suit}"
     
     __repr__ = __str__
 
-    @staticmethod
-    def generate_deck():
-        deck = []
-        for rank in Card.RANKS:
-            for suit in Card.SUITS:
-                deck.append(Card(f"{rank}{suit}"))
-        return deck
 
     @staticmethod
     def max(cards):
@@ -95,7 +113,7 @@ class Hand:
 
     @staticmethod
     def make_consecutive(cards):
-        return sorted(cards, key = lambda card: Card.RANKS.index(card.rank))
+        return sorted(cards, key = lambda card: Deck.RANKS.index(card.rank))
 
     # Accepts five and only five cards
     @staticmethod
@@ -106,7 +124,7 @@ class Hand:
         elif(len(cards) < 5):
             return False
 
-        joined = "".join(Card.RANKS[-1:])
+        joined = "".join(Deck.RANKS[-1:])
         ordered = "".join(str(card) for card in Hand.make_consecutive(cards))
         return ordered in joined
 
@@ -149,7 +167,7 @@ class Hand:
         suitless = [card.rank for card in ordered]
         count = Hand.count(suitless)
         setted = set(count.keys())
-        ordered_without_duplicates = sorted(list(setted), key = lambda rank: Card.RANKS.index(rank))
+        ordered_without_duplicates = sorted(list(setted), key = lambda rank: Deck.RANKS.index(rank))
 
         # If ordered without duplicates contains more than five cards, each five-card slice
         # must be examined.
@@ -198,11 +216,7 @@ class Hand:
 
 
 
-deck = Card.generate_deck()
-random.shuffle(deck)
-cards = []
-for i in range(7):
-    cards.append(deck[-1])
-    deck = deck[:-1]
+deck = Deck.shuffle(Deck().cards)
+deck, cards = Deck.pop(deck, 7)
 
 print(f"CARDS: {cards}\nRESULT: {Hand.classify(cards)}")
