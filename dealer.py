@@ -238,11 +238,3 @@ class Hand:
         
         return 'high card'
 
-deck = Deck.shuffle(Deck().cards)
-deck, cards = Deck.pop(deck, 7)
-
-# cards = Card("Ad"), Card("2d"), Card("3d"), Card("4d"), Card("5d")
-cards = Card("Ad"), Card("Ah"), Card("Td"), Card("Kd"), Card("Qd"), Card("Jd")
-# cards = Card("Ad"), Card("Th"), Card("Td"), Card("Kd"), Card("Qd"), Card("Jd")
-
-print(f"CARDS: {cards}\nRESULT: {Hand.classify(cards)}")
