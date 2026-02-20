@@ -129,7 +129,7 @@ class Hand:
     def is_straight(cards):
         if(len(cards) > 5):
             print("Warning. Use has_straight when checking for straights within more than five cards.")
-            return Hand.has_straight(cards)
+            return False
         elif(len(cards) < 5):
             return False
 
@@ -149,16 +149,21 @@ class Hand:
         return index_of_highest_straight
 
     @staticmethod
-    def is_flush(cards):
+    def get_max_same_suit(cards):
         suit_count = {}
+        cards_of_that_suit = {}
 
         for card in cards:
             suit = card.suit
             if suit in suit_count:
                 suit_count[suit] += 1
+                cards_of_that_suit[suit] = cards_of_that_suit[suit] + [card]
             else:
                 suit_count[suit] = 1
-        return max(suit_count.values()) >= 5
+                cards_of_that_suit[suit] = [card]
+
+        max_key = max(suit_count, key=suit_count.get)
+        return cards_of_that_suit[max_key]
 
     @staticmethod
     def count(cards):
@@ -181,8 +186,16 @@ class Hand:
         setted = set(count.keys())
         ordered_without_duplicates = sorted(list(setted), key = lambda rank: Deck.RANKS.index(rank))
 
-        # If ordered without duplicates contains more than five cards, each five-card slice
-        # must be examined.
+        # Flush logic
+        is_flush = False
+        max_same_suit = Hand.get_max_same_suit(ordered)
+        if(len(max_same_suit) >= 5):
+            is_flush = True
+
+        
+            
+
+        # Any straight logic
         pruned = ordered
         straight_index = Hand.get_highest_straight_index(cards)
         has_straight = False
@@ -195,10 +208,10 @@ class Hand:
 
         # print(f"cards: {cards}\nordered: {ordered}\nsuitless: {suitless}\ncount: {count}\nsetted: {setted}\nordered without duplicates: {ordered_without_duplicates}")
         
-        # Royal flush?
         # Straight flush?
-        if has_straight and Hand.is_flush(pruned):
-            if(max(pruned).rank == 'A' and min(pruned).rank == 'T'):
+        if(is_flush and Hand.get_highest_straight_index(max_same_suit) != -1):
+            # Royal flush?
+            if(max(max_same_suit).rank == 'A' and min(max_same_suit).rank == 'T'):
                 return 'royal flush'
             return 'straight flush'
         # Four of a kind?
@@ -208,7 +221,7 @@ class Hand:
         elif 3 in count.values() and 2 in count.values():
             return 'full house'
         # Flush?
-        elif Hand.is_flush(ordered):
+        elif is_flush:
             return 'flush'
         # Straight?
         elif has_straight:
@@ -228,8 +241,8 @@ class Hand:
 deck = Deck.shuffle(Deck().cards)
 deck, cards = Deck.pop(deck, 7)
 
-cards = Card("Ad"), Card("2d"), Card("3d"), Card("4d"), Card("5d")
-cards = Card("Ad"), Card("Td"), Card("Kd"), Card("Qd"), Card("Jd")
-cards = Card("Ad"), Card("Th"), Card("Kd"), Card("Qd"), Card("Jd")
+# cards = Card("Ad"), Card("2d"), Card("3d"), Card("4d"), Card("5d")
+cards = Card("Ad"), Card("Ah"), Card("Td"), Card("Kd"), Card("Qd"), Card("Jd")
+# cards = Card("Ad"), Card("Th"), Card("Td"), Card("Kd"), Card("Qd"), Card("Jd")
 
 print(f"CARDS: {cards}\nRESULT: {Hand.classify(cards)}")
