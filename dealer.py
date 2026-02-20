@@ -1,3 +1,5 @@
+import random
+
 class Card:
     RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"]
     SUITS = ["c", "d", 'h', "s"]
@@ -14,10 +16,10 @@ class Card:
 
     @staticmethod
     def generate_deck():
-        deck = {}
+        deck = []
         for rank in Card.RANKS:
             for suit in Card.SUITS:
-                deck[f"{rank}{suit}"] = Card(rank, suit)
+                deck.append(Card(f"{rank}{suit}"))
         return deck
 
     @staticmethod
@@ -42,9 +44,6 @@ class Card:
 
 
 class Hand:
-
-
-        
 
     HANDS = \
     { 
@@ -91,18 +90,40 @@ class Hand:
     }
 
     @staticmethod
+    def max(cards):
+        return Hand.make_consecutive(cards)[-1]
+
+    @staticmethod
     def make_consecutive(cards):
         return sorted(cards, key = lambda card: Card.RANKS.index(card.rank))
 
+    # Accepts five and only five cards
     @staticmethod
     def is_straight(cards):
-        joined = Card.RANKS[-1:].join()
-        ordered = Hand.make_consecutive(cards).join()
+        if(len(cards) > 5):
+            print("Warning. Use has_straight when checking for straights within more than five cards.")
+            return Hand.has_straight(cards)
+        elif(len(cards) < 5):
+            return False
+
+        joined = "".join(Card.RANKS[-1:])
+        ordered = "".join(str(card) for card in Hand.make_consecutive(cards))
         return ordered in joined
 
     @staticmethod
+    def get_highest_straight_index(cards):
+        if (len(cards) < 5):
+            return 0 if Hand.is_straight(cards) else -1
+
+        index_of_highest_straight = -1
+        for i in range(len(cards) - 4):
+            if(Hand.is_straight(cards[i:5+i])):
+                index_of_highest_straight = i
+        return index_of_highest_straight
+
+    @staticmethod
     def is_flush(cards):
-        suits = ()
+        suits = set()
 
         for card in cards:
             suits.add(card.suit)
@@ -119,6 +140,7 @@ class Hand:
                 card_count[card] = 1
         return card_count
 
+
     # It's gonna be sets of seven cards needing classification; 
     # the five community cards and the two hole cards.
     @staticmethod
@@ -127,17 +149,60 @@ class Hand:
         suitless = [card.rank for card in ordered]
         count = Hand.count(suitless)
         setted = set(count.keys())
-        print(f"cards: {cards}\nordered: {ordered}\nsuitless: {suitless}\ncount: {count}\nsetted: {setted}")
-        """
+        ordered_without_duplicates = sorted(list(setted), key = lambda rank: Card.RANKS.index(rank))
+
+        # If ordered without duplicates contains more than five cards, each five-card slice
+        # must be examined.
+        pruned = ordered
+        straight_index = Hand.get_highest_straight_index(cards)
+        has_straight = False
+        if(straight_index != -1):
+            pruned = cards[straight_index:straight_index + 5]
+            has_straight = True
+                    
+
+        num_pairs = sum([1 for num in count.values() if num == 2])
+
+        # print(f"cards: {cards}\nordered: {ordered}\nsuitless: {suitless}\ncount: {count}\nsetted: {setted}\nordered without duplicates: {ordered_without_duplicates}")
+        
         # Royal flush?
-        if(set(suitless) == {'A', 'K', 'Q', 'J', 'T'}):
-            return 'royal flush'
         # Straight flush?
-        elif(Hand.is_straight(cards) and Hand.is_flush(cards))
+        if has_straight and Hand.is_flush(pruned):
+            if(max(pruned).rank == 'A'):
+                return 'royal flush'
             return 'straight flush'
         # Four of a kind?
-        """
+        elif max(count.values()) == 4:
+            return 'four of a kind'
+        # Full house?
+        elif 3 in count.values() and 2 in count.values():
+            return 'full house'
+        # Flush?
+        elif Hand.is_flush(pruned):
+            return 'flush'
+        # Straight?
+        elif has_straight:
+            return 'straight'
+        # Three of a kind?
+        elif 3 in count.values():
+            return 'three of a kind'
+        # Two pair?
+        elif num_pairs >= 2:
+            return 'two pair'
+        # One pair?
+        elif(num_pairs == 1):
+            return 'one pair'
+        
+        return 'high card'
 
-s = [Card("Ad"), Card("2d"), Card("5h"), Card("7d"), Card("2s"), Card("Tc")]
-print(Card("Ad"))
-Hand.classify(s)
+
+
+
+deck = Card.generate_deck()
+random.shuffle(deck)
+cards = []
+for i in range(7):
+    cards.append(deck[-1])
+    deck = deck[:-1]
+
+print(f"CARDS: {cards}\nRESULT: {Hand.classify(cards)}")
