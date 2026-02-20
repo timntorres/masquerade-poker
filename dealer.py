@@ -5,6 +5,9 @@ class Deck:
     RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"]
     SUITS = ["c", "d", 'h', "s"]
 
+    def __init__(self):
+        self.cards = Deck.generate_deck()
+
     @staticmethod
     def generate_deck():
         deck = []
@@ -13,9 +16,6 @@ class Deck:
                 deck.append(Card(f"{rank}{suit}"))
         return deck
 
-    def __init__(self):
-        self.cards = Deck.generate_deck()
-        
     @staticmethod
     def shuffle(deck):
         random.shuffle(deck)
@@ -38,7 +38,6 @@ class Card:
         return f"{self.rank}{self.suit}"
     
     __repr__ = __str__
-
 
     @staticmethod
     def max(cards):
@@ -141,12 +140,16 @@ class Hand:
 
     @staticmethod
     def is_flush(cards):
-        suits = set()
+        print(cards)
+        suit_count = {}
 
         for card in cards:
-            suits.add(card.suit)
-        
-        return len(suits) == 1
+            suit = card.suit
+            if suit in suit_count:
+                suit_count[suit] += 1
+            else:
+                suit_count[suit] = 1
+        return max(suit_count.values()) >= 5
 
     @staticmethod
     def count(cards):
@@ -196,7 +199,7 @@ class Hand:
         elif 3 in count.values() and 2 in count.values():
             return 'full house'
         # Flush?
-        elif Hand.is_flush(pruned):
+        elif Hand.is_flush(ordered):
             return 'flush'
         # Straight?
         elif has_straight:
@@ -212,9 +215,6 @@ class Hand:
             return 'one pair'
         
         return 'high card'
-
-
-
 
 deck = Deck.shuffle(Deck().cards)
 deck, cards = Deck.pop(deck, 7)
