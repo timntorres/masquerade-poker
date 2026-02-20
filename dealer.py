@@ -39,6 +39,16 @@ class Card:
     
     __repr__ = __str__
 
+    def __eq__(self, other):
+        if not isinstance(other, Card):
+            return NotImplemented
+        return self.value == other.value
+    
+    def __lt__(self, other):
+        if not isinstance(other, Card):
+            return NotImplemented
+        return self.value < other.value
+
     @staticmethod
     def max(cards):
         max = -1
@@ -123,9 +133,9 @@ class Hand:
         elif(len(cards) < 5):
             return False
 
-        joined = "".join(Deck.RANKS[-1:])
-        ordered = "".join(str(card) for card in Hand.make_consecutive(cards))
-        return ordered in joined
+        joined = "".join(Deck.RANKS)
+        ordered = "".join(str(card.rank) for card in Hand.make_consecutive(cards))
+        return (ordered in joined) or (ordered == "2345A") # The wheel edge case
 
     @staticmethod
     def get_highest_straight_index(cards):
@@ -140,7 +150,6 @@ class Hand:
 
     @staticmethod
     def is_flush(cards):
-        print(cards)
         suit_count = {}
 
         for card in cards:
@@ -189,7 +198,7 @@ class Hand:
         # Royal flush?
         # Straight flush?
         if has_straight and Hand.is_flush(pruned):
-            if(max(pruned).rank == 'A'):
+            if(max(pruned).rank == 'A' and min(pruned).rank == 'T'):
                 return 'royal flush'
             return 'straight flush'
         # Four of a kind?
@@ -218,5 +227,9 @@ class Hand:
 
 deck = Deck.shuffle(Deck().cards)
 deck, cards = Deck.pop(deck, 7)
+
+cards = Card("Ad"), Card("2d"), Card("3d"), Card("4d"), Card("5d")
+cards = Card("Ad"), Card("Td"), Card("Kd"), Card("Qd"), Card("Jd")
+cards = Card("Ad"), Card("Th"), Card("Kd"), Card("Qd"), Card("Jd")
 
 print(f"CARDS: {cards}\nRESULT: {Hand.classify(cards)}")
