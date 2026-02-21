@@ -22,8 +22,9 @@ for i in range(trials):
     deck = Deck.shuffle(Deck().cards)
     deck, cards = Deck.pop(deck, 5)
 
-    result = Hand.classify(cards)
-    # print(f"CARDS: {cards}\nRESULT: {result}")
+    hand_object = Hand.classify(cards)
+
+    result = hand_object.hand_id 
 
     if result in results:
         results[result] += 1

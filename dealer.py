@@ -1,4 +1,5 @@
 import random
+import heapq
 
 class Deck:
     
@@ -72,60 +73,28 @@ class Card:
 
 class Hand:
 
-    HANDS = \
-    { 
-        "royal flush": # NONE: always chop
-            {
-                "value": 9, "kickers": 0
-            },
-        "straight flush": # STRAIGHT: Highest low card (to sort out the wheel)
-            {
-                "value": 8, "kickers": 0
-            },
-        "four of a kind": # BREAK ORDER: Four of a kind's value, or else the highest card
-            {
-                "value": 7, "kickers": 1
-            },
-        "full house": # BREAK ORDER: Three cards, or else the two cards
-            {
-                "value": 6, "kickers": 0
-            },
-        "flush": # SORT BY HIGHEST: Tiebreaker is the highest card
-            {
-                "value": 5, "kickers": 0
-            },
-        "straight": # STRAIGHT: Highest low card (to sort out the wheel)
-            {
-                "value": 4, "kickers": 0
-            },
-        "three of a kind": # BREAK ORDER: the three cards, or else the next highest 2 cards
-            {
-                "value": 3, "kickers": 2
-            },
-        "two pair": # BREAK ORDER: the higher pair, or else the lower pair, or else the kicker
-            {
-                "value": 2, "kickers": 1
-            },
-        "one pair": # BREAK ORDER: the higher pair, or else the highest of three kickers
-            {
-                "value": 1, "kickers": 3
-            },
-        "high card": # SORT BY HIGHEST: the higher card
-            {
-                "value": 0, "kickers": 4
-            }
-    }
+    HANDS = [ \
+                'high card', 'one pair', 'two pair', \
+                'three of a kind', 'straight', 'flush', \
+                'full house', 'four of a kind', 'straight flush', \
+                'royal flush' \
+            ]
 
-    def __init__(self, cards, hand_id):
+    def __init__(self, hand_id, cards, quads, threes, pairs, kickers):
+        self.hand_id = hand_id
         self.cards = cards
-        self.hand_id = Hand.classify(cards)
-        # Hands have their own value with respect to other hands
-        # They also have a value within that same hand
-        # Lastly, when the hand has kickers, those are taken into account when necessary.
+        self.quads = quads
+        self.threes = threes
+        self.pairs = pairs
+        self.kickers = kickers
 
     @staticmethod
     def max(cards):
         return Hand.make_consecutive(cards)[-1]
+
+    @staticmethod
+    def sorted(ranks):
+        return sorted(ranks, key = lambda rank: Deck.RANKS.index(rank))
 
     @staticmethod
     def make_consecutive(cards):
@@ -148,6 +117,8 @@ class Hand:
     def get_highest_straight_index(cards):
         if (len(cards) < 5):
             return 0 if Hand.is_straight(cards) else -1
+
+        ordered = Hand.make_consecutive(cards)
 
         index_of_highest_straight = -1
         for i in range(len(cards) - 4):
@@ -182,6 +153,26 @@ class Hand:
                 card_count[card] = 1
         return card_count
 
+    def max_rank(ranks, n=1):
+        if(n == 1):
+            return max(ranks, key = lambda rank: Deck.RANKS.index(rank))
+        return heapq.nlargest(n, ranks, key = lambda rank: Deck.RANKS.index(rank))
+
+
+
+    @staticmethod
+    def max(cards, n=1):
+        if len(cards) == 0:
+            return cards
+
+        if len(cards) == 1:
+            return cards[0]
+
+        if(n == 1):
+            return max(cards, key = lambda card: Deck.RANKS.index(card.rank))
+
+        return heapq.nlargest(n, cards, key = lambda card: Deck.RANKS.index(card.rank))
+
 
     # It's gonna be sets of seven cards needing classification; 
     # the five community cards and the two hole cards.
@@ -190,7 +181,41 @@ class Hand:
     def classify(cards):
         ordered = Hand.make_consecutive(cards)
         suitless = [card.rank for card in ordered]
+
         count = Hand.count(suitless)
+
+        quadded_ranks = [key for key, value in count.items() if value == 4] 
+        threed_ranks = [key for key, value in count.items() if value == 3]
+        paired_ranks = [key for key, value in count.items() if value == 2]
+        # Since "three pair" isn't a hand, only the top two pairs matter; 
+        # the third pair could be a kicker, though.
+        """
+            BOARD: KKQT3
+            Person A:  Q T
+            Person B:  Q 3
+        """
+        paired_ranks = Hand.max_rank(paired_ranks, 2)
+
+        quads = {}
+        threes = {}
+        pairs = {}
+        kicker_candidates = []
+        hand_id = ''
+        final_hand = []
+        kickers = []
+
+
+
+
+        for card in ordered:
+            if(card.rank in quadded_ranks):
+                quads.setdefault(card.rank, []).append(card)
+            elif (card.rank in threed_ranks):
+                threes.setdefault(card.rank, []).append(card)
+            elif (card.rank in paired_ranks):
+                pairs.setdefault(card.rank, []).append(card)
+            else:
+                kicker_candidates.append(card)
 
         # Detect flush
         is_flush = False
@@ -205,38 +230,73 @@ class Hand:
         if(straight_index != -1):
             pruned = cards[straight_index:straight_index + 5]
             has_straight = True
-                    
 
-        num_pairs = sum([1 for num in count.values() if num == 2])
+        # Classify
+        max_straight_flush_index = Hand.get_highest_straight_index(max_same_suit)
 
-        # Straight flush?
-        highest_straight_index_of_same_suit = Hand.get_highest_straight_index(max_same_suit)
-        if(is_flush and highest_straight_index_of_same_suit != -1):
-            # Royal flush?
-            if(''.join([card.rank for card in max_same_suit[highest_straight_index_of_same_suit:]]) == 'TJQKA'):
-                return 'royal flush'
-            return 'straight flush'
-        # Four of a kind?
-        elif max(count.values()) == 4:
-            return 'four of a kind'
-        # Full house?
-        elif 3 in count.values() and 2 in count.values():
-            return 'full house'
-        # Flush?
+        if(is_flush and max_straight_flush_index != -1):
+            if(''.join([card.rank for card in max_same_suit[max_straight_flush_index:]]) == 'TJQKA'):
+                hand_id = 'royal flush'
+            hand_id = 'straight flush'
+            final_hand = max_same_suit[max_straight_flush_index:max_straight_flush_index + 5]
+        elif len(quadded_ranks) != 0:
+            hand_id = 'four of a kind'
+            # This line technically could fail in cases of quads over quads within the same hand,
+            # but with two hole cards and five community cards, quads over quads will never
+            # occur.
+
+            # Can't use kicker_candidates because, of course, three-of-a-kind and paired cards
+            # can technically be kickers in cases of quads.
+            kickers.append(Hand.max([card for card in ordered if card.rank not in quadded_ranks]))
+            final_hand = list(quads.values())[-1] + kickers
+        elif (len(threed_ranks) == 1 and len(paired_ranks)  >= 1) \
+            or (len(threed_ranks) > 1):
+            hand_id = 'full house'
+            # Find and add the max three
+            max_threed_rank = Hand.max_rank(threed_ranks)
+            final_hand = threes[max_threed_rank]
+            # Join the pairs and the remaining threes
+            remaining = []
+            for rank in threes.keys():
+                if rank == max_threed_rank:
+                    continue
+                remaining += threes[rank]
+            for rank in pairs.keys():
+                remaining += pairs[rank]
+            # Order them
+            remaining = Hand.make_consecutive(remaining)
+            # Stick the last two onto the end
+            final_hand += remaining[-2:]
+
+            # Hardcode the effective three and the effective pair
+            threes = {max_threed_rank: threes[max_threed_rank]}
+            pairs = {remaining[-1].rank: remaining[-2:]}
+
         elif is_flush:
-            return 'flush'
-        # Straight?
+            hand_id = 'flush'
+            max_same_suit = Hand.make_consecutive(max_same_suit)
+            start_index = max(len(max_same_suit) - 5, 0)
+            final_hand = max_same_suit[start_index:start_index + 5]
         elif has_straight:
-            return 'straight'
-        # Three of a kind?
-        elif 3 in count.values():
-            return 'three of a kind'
-        # Two pair?
-        elif num_pairs >= 2:
-            return 'two pair'
-        # One pair?
-        elif(num_pairs == 1):
-            return 'one pair'
-        
-        return 'high card'
+            hand_id = 'straight'
+            final_hand = pruned
+        elif len(threed_ranks) == 1:
+            hand_id = 'three of a kind'
+            kickers = Hand.max(kicker_candidates, 2)
+            final_hand = list(threes.values())[-1] + kickers
+        elif len(paired_ranks) == 2:
+            hand_id = 'two pair'
+            kickers.append(Hand.max([card for card in ordered if card.rank not in quadded_ranks]))
+            final_hand = list(pairs.values())[-1] + list(pairs.values())[-2] + kickers
+        elif len(paired_ranks) == 1:
+            hand_id = 'one pair'
+            kickers = Hand.max(kicker_candidates, 3)
+            final_hand = list(pairs.values())[-1] + kickers
+        else:
+            hand_id = 'high card'
+            kickers = Hand.max(kicker_candidates, 5)
+            final_hand = kickers
+
+
+        return Hand(hand_id, cards, quads, threes, pairs, kickers)
 
