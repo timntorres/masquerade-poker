@@ -21,7 +21,7 @@ class Deck:
     def shuffle(deck, seed=None):
         if(seed != None):
             print(f"Shuffling with seed {seed}")
-            random.seed(0)
+            random.seed(seed)
         random.shuffle(deck)
         return deck
 

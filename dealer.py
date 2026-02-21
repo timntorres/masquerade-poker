@@ -1,5 +1,6 @@
 from deck import Deck, Hand
 from ollama import chat
+import string
 
 class Player:
     def __init__(self, name, buy_in):
@@ -23,7 +24,7 @@ It's your {self.hand_number}th hand at this table. \
 You have {self.chips} in chips. \
 You've been dealt {self.hole_cards}. \
 It's your turn to act. \n
-Respond with either "call," "fold," or "raise." If you decide to "raise," be sure to include one number between {min_raise} and {self.chips} to represent the amount by which you'd like to raise."""
+Respond with exactly one word: "call," "fold," or "raise." If you decide to "raise," include exactly one number between {min_raise} and {self.chips} to represent the amount by which you'd like to raise."""
 
     def act(self, community_context, prev_highest_bet, min_raise):
         is_check = self.amount_in == prev_highest_bet
@@ -40,7 +41,7 @@ Respond with either "call," "fold," or "raise." If you decide to "raise," be sur
         ])
 
         print(response.message.content)
-        processed = response.message.content.strip().lower()
+        processed = response.message.content.strip().lower().maketrans('', '', string.punctuation)
         if("raise" in processed):
             action = "raise"
             raise_amount = int(processed.split()[-1])
@@ -163,8 +164,7 @@ class TexasHoldEm:
                 i += 1
                 i %= len(self.players)
                 continue
-            # TODO: For some reason, Carol is posting both small blind and big blind.
-            # TODO: Another issue: Action ended too early. See attached, saved to desktop
+
             action, bet_size = player.act(self.game_log, prev_highest_bet, min_raise)
 
             self.game_log += f"{player.name} {action}s"
