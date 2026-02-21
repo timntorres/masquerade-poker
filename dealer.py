@@ -1,7 +1,5 @@
 from deck import Deck, Hand
 from ollama import chat
-import time
-import math
 
 class Player:
     def __init__(self, name, buy_in):
@@ -14,30 +12,43 @@ class Player:
         self.hand_number = 0
         self.amount_in = 0
 
-    def build_local_context(self, is_check, min_raise):
+    def build_local_context(self, is_check, prev_highest_bet, min_raise):
+        call_all_in = ""
         check_or_call = "call"
         if(is_check):
             check_or_call = "check"
 
+        raise_is_an_option = prev_highest_bet - self.amount_in < self.chips
+
+        ending = f""""raise N"
+Such that N is a number between {min_raise} and {self.chips}.\n
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!""" if min_raise < self.chips else f"""\"raise {self.chips}" (all in).\n
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!"""
+
+        if(not raise_is_an_option):
+            call_all_in = " (all in)"
+            ending = """\n
+Respond QUICKLY, with at most ONE word, and NO punctuation!"""
+
+
         return f"""\nYour name is {self.name}. \
 You are an expert at No-Limit Hold 'Em who makes extremely accurate decisions incredibly quickly. \
-It's your {self.hand_number}th hand at this table. \
-You have {self.chips} in chips. \
-You've been dealt {self.hole_cards}. \
+It's your {self.hand_number}th hand at this table with a strict time limit. Trust your instinct and make snap judgments. \
 It's your turn to act. \n
+You've been dealt {self.hole_cards}.\n\
+You have {self.chips} in chips.\n
 Choose from the following responses:
-"{check_or_call}"
+"{check_or_call}{call_all_in}"
 "fold"
-"raise N"
-Such that N is a number between {min_raise} and {self.chips}.
-Respond with exactly ONE word, with NO punctuation."""
+{ending}
+"""
 
     def act(self, community_context, prev_highest_bet, min_raise):
         is_check = self.amount_in == prev_highest_bet
 
-        total_context = community_context + self.build_local_context(is_check, min_raise)
+        total_context = community_context + self.build_local_context(is_check, prev_highest_bet, min_raise)
 
-        print(total_context)
+        print(f"\n\n\n{total_context}\n\n\n")
 
         response = chat(model='glm-4.7-flash', messages=[
         {
@@ -48,6 +59,11 @@ Respond with exactly ONE word, with NO punctuation."""
 
         print(response.message.content)
         processed = response.message.content.strip().lower()
+
+        # If they didn't follow instructions, split it by \n\n and prune all but the last instance.
+        if(len(processed) > 11):
+            processed = processed.split('\n\n')[-1]
+
         if("raise" in processed):
             action = "raise"
             raise_amount = int(processed.split()[-1])
@@ -166,7 +182,7 @@ class TexasHoldEm:
 
             player = self.players[i]
 
-            if player in inactive:
+            if player in inactive or player.all_in:
                 i += 1
                 i %= len(self.players)
                 continue
@@ -184,12 +200,13 @@ class TexasHoldEm:
                 self.game_log += f" and is all-in"
             self.game_log += ".\n"
             
-            if action == "fold" or player.all_in:
+            if action == "fold":
                 inactive.add(player)
             else:
                 prev_actor = player
 
             everyone_folded = (len(inactive) == len(self.players) - 1)
+            
             pot_is_right = (player == last_to_act and action != "raise")
             if(everyone_folded or pot_is_right):
                 print(f"Everyone folded? {everyone_folded}. Pot's right? {pot_is_right}.")
@@ -205,12 +222,13 @@ class TexasHoldEm:
                     player.chips += self.pot
             return
 
+        self.game_log += f"\n"
         for player in self.players:
             if(player in inactive):
                 continue
             self.game_log += f"{player.name} (${player.chips}) sees flop.\n"
         self.deck, community_cards = Deck.pop(self.deck, 3)
-        self.game_log += "\nFLOP: {community_cards}"
+        self.game_log += f"\nFLOP: {community_cards}"
         print(self.game_log)
         # TODO: Another round of betting.
 
@@ -226,6 +244,6 @@ t.add_player("John", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Stacy", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Matt", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Jenna", TexasHoldEm.MAX_BUY_IN)
-t.start_round(math.floor(time.time()*1000))
+t.start_round(1771690299718)
 
 

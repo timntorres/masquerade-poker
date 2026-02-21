@@ -1,6 +1,7 @@
 import random
 import heapq
-
+import math
+import time
 class Deck:
     
     RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"]
@@ -19,9 +20,10 @@ class Deck:
 
     @staticmethod
     def shuffle(deck, seed=None):
-        if(seed != None):
-            print(f"Shuffling with seed {seed}")
-            random.seed(seed)
+        if(seed == None):
+            seed = math.floor(time.time()*1000)
+        print(f"Shuffling with seed {seed}")
+        random.seed(seed)
         random.shuffle(deck)
         return deck
 
