@@ -74,47 +74,54 @@ class Hand:
 
     HANDS = \
     { 
-        "royal flush": 
+        "royal flush": # NONE: always chop
             {
                 "value": 9, "kickers": 0
             },
-        "straight flush": 
+        "straight flush": # STRAIGHT: Highest low card (to sort out the wheel)
             {
                 "value": 8, "kickers": 0
             },
-        "four of a kind": 
+        "four of a kind": # BREAK ORDER: Four of a kind's value, or else the highest card
             {
                 "value": 7, "kickers": 1
             },
-        "full house": 
+        "full house": # BREAK ORDER: Three cards, or else the two cards
             {
                 "value": 6, "kickers": 0
             },
-        "flush": 
+        "flush": # SORT BY HIGHEST: Tiebreaker is the highest card
             {
                 "value": 5, "kickers": 0
             },
-        "straight": 
+        "straight": # STRAIGHT: Highest low card (to sort out the wheel)
             {
                 "value": 4, "kickers": 0
             },
-        "three of a kind": 
+        "three of a kind": # BREAK ORDER: the three cards, or else the next highest 2 cards
             {
                 "value": 3, "kickers": 2
             },
-        "two pair": 
+        "two pair": # BREAK ORDER: the higher pair, or else the lower pair, or else the kicker
             {
                 "value": 2, "kickers": 1
             },
-        "one pair": 
+        "one pair": # BREAK ORDER: the higher pair, or else the highest of three kickers
             {
-                "value": 1, "kickers": 4
+                "value": 1, "kickers": 3
             },
-        "high card": 
+        "high card": # SORT BY HIGHEST: the higher card
             {
                 "value": 0, "kickers": 4
             }
     }
+
+    def __init__(self, cards, hand_id):
+        self.cards = cards
+        self.hand_id = Hand.classify(cards)
+        # Hands have their own value with respect to other hands
+        # They also have a value within that same hand
+        # Lastly, when the hand has kickers, those are taken into account when necessary.
 
     @staticmethod
     def max(cards):
@@ -178,24 +185,20 @@ class Hand:
 
     # It's gonna be sets of seven cards needing classification; 
     # the five community cards and the two hole cards.
+    # Return the five effective cards (i.e. what constitutes the hand) as well as the hand name.
     @staticmethod
     def classify(cards):
         ordered = Hand.make_consecutive(cards)
         suitless = [card.rank for card in ordered]
         count = Hand.count(suitless)
-        setted = set(count.keys())
-        ordered_without_duplicates = sorted(list(setted), key = lambda rank: Deck.RANKS.index(rank))
 
-        # Flush logic
+        # Detect flush
         is_flush = False
         max_same_suit = Hand.get_max_same_suit(ordered)
         if(len(max_same_suit) >= 5):
             is_flush = True
 
-        
-            
-
-        # Any straight logic
+        # Detect any straight
         pruned = ordered
         straight_index = Hand.get_highest_straight_index(cards)
         has_straight = False
@@ -206,12 +209,11 @@ class Hand:
 
         num_pairs = sum([1 for num in count.values() if num == 2])
 
-        # print(f"cards: {cards}\nordered: {ordered}\nsuitless: {suitless}\ncount: {count}\nsetted: {setted}\nordered without duplicates: {ordered_without_duplicates}")
-        
         # Straight flush?
-        if(is_flush and Hand.get_highest_straight_index(max_same_suit) != -1):
+        highest_straight_index_of_same_suit = Hand.get_highest_straight_index(max_same_suit)
+        if(is_flush and highest_straight_index_of_same_suit != -1):
             # Royal flush?
-            if(max(max_same_suit).rank == 'A' and min(max_same_suit).rank == 'T'):
+            if(''.join([card.rank for card in max_same_suit[highest_straight_index_of_same_suit:]]) == 'TJQKA'):
                 return 'royal flush'
             return 'straight flush'
         # Four of a kind?
