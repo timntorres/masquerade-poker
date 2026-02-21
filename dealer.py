@@ -12,7 +12,7 @@ class Player:
         self.hand_number = 0
         self.amount_in = 0
 
-    def build_local_context(self, is_check):
+    def build_local_context(self, is_check, min_raise):
         check_or_call = "call"
         if(is_check):
             check_or_call = "check"
@@ -23,12 +23,12 @@ It's your {self.hand_number}th hand at this table. \
 You have {self.chips} in chips. \
 You've been dealt {self.hole_cards}. \
 It's your turn to act. \n
-Respond in one word: raise, {check_or_call}, or fold."""
+Respond with either "call," "fold," or "raise." If you decide to "raise," be sure to include one number between {min_raise} and {self.chips} to represent the amount by which you'd like to raise."""
 
     def act(self, community_context, prev_highest_bet, min_raise):
         is_check = self.amount_in == prev_highest_bet
 
-        total_context = community_context + self.build_local_context(is_check)
+        total_context = community_context + self.build_local_context(is_check, min_raise)
 
         print(total_context)
 
@@ -43,7 +43,8 @@ Respond in one word: raise, {check_or_call}, or fold."""
         processed = response.message.content.strip().lower()
         if("raise" in processed):
             action = "raise"
-            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_bet + 2 * min_raise - self.amount_in)
+            raise_amount = int(processed.split()[-1])
+            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_bet + raise_amount - self.amount_in)
         elif ("call" in processed):
             action = "call"
             self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_bet - self.amount_in)
@@ -96,7 +97,7 @@ class TexasHoldEm:
     def __init__(self):
         self.pot = 0
         self.highest_bet = 0
-        self.deck = Deck.shuffle(Deck().cards)
+        self.deck = []
         self.players = []
         self.player_index_of_button = 0
         self.game_log = ''

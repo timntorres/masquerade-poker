@@ -20,7 +20,8 @@ class Deck:
     @staticmethod
     def shuffle(deck, seed=None):
         if(seed != None):
-            random.seed = seed
+            print(f"Shuffling with seed {seed}")
+            random.seed(0)
         random.shuffle(deck)
         return deck
 
