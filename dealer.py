@@ -1,6 +1,7 @@
 from deck import Deck, Hand
 from ollama import chat
-import string
+import time
+import math
 
 class Player:
     def __init__(self, name, buy_in):
@@ -24,7 +25,12 @@ It's your {self.hand_number}th hand at this table. \
 You have {self.chips} in chips. \
 You've been dealt {self.hole_cards}. \
 It's your turn to act. \n
-Respond with exactly one word: "call," "fold," or "raise." If you decide to "raise," include exactly one number between {min_raise} and {self.chips} to represent the amount by which you'd like to raise."""
+Choose from the following responses:
+"{check_or_call}"
+"fold"
+"raise N"
+Such that N is a number between {min_raise} and {self.chips}.
+Respond with exactly ONE word, with NO punctuation."""
 
     def act(self, community_context, prev_highest_bet, min_raise):
         is_check = self.amount_in == prev_highest_bet
@@ -41,7 +47,7 @@ Respond with exactly one word: "call," "fold," or "raise." If you decide to "rai
         ])
 
         print(response.message.content)
-        processed = response.message.content.strip().lower().maketrans('', '', string.punctuation)
+        processed = response.message.content.strip().lower()
         if("raise" in processed):
             action = "raise"
             raise_amount = int(processed.split()[-1])
@@ -155,7 +161,7 @@ class TexasHoldEm:
         i = (bb_index + 1)%len(self.players)
         last_to_act = self.players[bb_index]
         inactive = set()
-        prev_actor = None
+        prev_actor = last_to_act
         while not action_ends:
 
             player = self.players[i]
@@ -192,6 +198,26 @@ class TexasHoldEm:
             i += 1
             i %= len(self.players)
 
+        if(everyone_folded):
+            for player in self.players:
+                if player not in inactive:
+                    self.game_log += f"{player.name} collects ${self.pot} from the pot.\n"
+                    player.chips += self.pot
+            return
+
+        for player in self.players:
+            if(player in inactive):
+                continue
+            self.game_log += f"{player.name} (${player.chips}) sees flop.\n"
+        self.deck, community_cards = Deck.pop(self.deck, 3)
+        self.game_log += "\nFLOP: {community_cards}"
+        print(self.game_log)
+        # TODO: Another round of betting.
+
+        
+
+
+
 
 t = TexasHoldEm()
 t.add_player("Ben", TexasHoldEm.MAX_BUY_IN)
@@ -200,6 +226,6 @@ t.add_player("John", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Stacy", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Matt", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Jenna", TexasHoldEm.MAX_BUY_IN)
-t.start_round(seed=0)
+t.start_round(math.floor(time.time()*1000))
 
 
