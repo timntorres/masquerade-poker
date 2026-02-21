@@ -188,7 +188,7 @@ class Hand:
         threed_ranks = [key for key, value in count.items() if value == 3]
         paired_ranks = [key for key, value in count.items() if value == 2]
         # Since "three pair" isn't a hand, only the top two pairs matter; 
-        # the third pair could be a kicker, though.
+        # the third pair's rank could serve as a kicker, though.
         """
             BOARD: KKQT3
             Person A:  Q T
@@ -203,9 +203,6 @@ class Hand:
         hand_id = ''
         final_hand = []
         kickers = []
-
-
-
 
         for card in ordered:
             if(card.rank in quadded_ranks):
@@ -245,8 +242,8 @@ class Hand:
             # but with two hole cards and five community cards, quads over quads will never
             # occur.
 
-            # Can't use kicker_candidates because, of course, three-of-a-kind and paired cards
-            # can technically be kickers in cases of quads.
+            # Should avoid kicker_candidates because, of course, ranks of three-of-a-kind and paired cards
+            # can serve as kickers in cases of quads.
             kickers.append(Hand.max([card for card in ordered if card.rank not in quadded_ranks]))
             final_hand = list(quads.values())[-1] + kickers
         elif (len(threed_ranks) == 1 and len(paired_ranks)  >= 1) \
@@ -300,3 +297,57 @@ class Hand:
 
         return Hand(hand_id, cards, quads, threes, pairs, kickers)
 
+class Player:
+    def __init__(self, name, buy_in):
+        self.name = name
+        self.chips = buy_in
+        self.hole_cards = []
+        self.is_active = True
+        self.position = ""
+
+class TexasHoldEm:
+
+    SMALL_BLIND = 2
+    BIG_BLIND = 5
+    MAX_BUY_IN = 500
+
+    POSITIONS_PER_PLAYERCOUNT = \
+        {
+            2: ["BTN", "BB"],
+            3: ["BTN", "SB", "BB"],
+            4: ["BTN", "SB", "BB", "CO"],
+            5: ["BTN", "SB", "BB", "HJ", "CO"],
+            6: ["BTN", "SB", "BB", "UTG", "HJ", "CO"],
+        }
+    def __init__(self):
+        self.pot = 0
+        self.highest_bet = 0
+        self.deck = Deck.shuffle(Deck().cards)
+        self.players = []
+        self.player_index_of_button = 0
+
+    def add_player(self, name, buy_in):
+        if len(self.players) >= 6:
+            return None
+        new_player = Player(name, buy_in)
+        self.players.append(new_player)
+        print(f"{name} has bought in for ${buy_in}.")
+    
+    def start_round(self):
+        self.deck = Deck.shuffle(Deck().cards)
+
+        # Print metadata
+        print("New round started.")
+        # Set positions.
+        position_names = TexasHoldEm.POSITIONS_PER_PLAYERCOUNT[len(self.players)]
+        # Distribute cards.
+        for index, player in enumerate(self.players):
+            self.deck, player.hole_cards = Deck.pop(self.deck, 2)
+            player.position = position_names[index - self.player_index_of_button]
+            print(f"Dealt {player.hole_cards} to {player.name} in {player.position} (${player.chips})")
+
+
+t = TexasHoldEm()
+t.add_player("bb", TexasHoldEm.MAX_BUY_IN)
+t.add_player("gg", TexasHoldEm.MAX_BUY_IN)
+t.start_round()
