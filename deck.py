@@ -18,7 +18,9 @@ class Deck:
         return deck
 
     @staticmethod
-    def shuffle(deck):
+    def shuffle(deck, seed=None):
+        if(seed != None):
+            random.seed = seed
         random.shuffle(deck)
         return deck
 

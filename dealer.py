@@ -10,33 +10,69 @@ class Player:
         self.all_in = False
         self.position = ""
         self.hand_number = 0
+        self.amount_in = 0
 
-    def build_local_context(self):
-        return f"""
-            It's your {self.hand_number}th hand at this table. \
-            You have {self.chips} in chips. \
-            You've been dealt {self.hole_Cards}.
-        """
+    def build_local_context(self, is_check):
+        check_or_call = "call"
+        if(is_check):
+            check_or_call = "check"
 
-    def act(self, community_context):
-        total_context = self.build_local_context() + community_context
+        return f"""\nYour name is {self.name}. \
+You are an expert at No-Limit Hold 'Em who makes extremely accurate decisions incredibly quickly. \
+It's your {self.hand_number}th hand at this table. \
+You have {self.chips} in chips. \
+You've been dealt {self.hole_cards}. \
+It's your turn to act. \n
+Respond in one word: raise, {check_or_call}, or fold."""
+
+    def act(self, community_context, prev_highest_bet, min_raise):
+        is_check = self.amount_in == prev_highest_bet
+
+        total_context = community_context + self.build_local_context(is_check)
 
         print(total_context)
 
-        response = chat(model='gemma3', messages=[
+        response = chat(model='glm-4.7-flash', messages=[
         {
-            'role': 'Poker Expert',
-            'content': f'{total_context}',
+            'role': 'user',
+            'content': total_context,
         },
         ])
-        print(response.message.content)
 
-    def post_blind(self, amount):
-        effective_blind = min(amount, self.chips)
-        self.chips -= effective_blind
+        print(response.message.content)
+        processed = response.message.content.strip().lower()
+        if("raise" in processed):
+            action = "raise"
+            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_bet + 2 * min_raise - self.amount_in)
+        elif ("call" in processed):
+            action = "call"
+            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_bet - self.amount_in)
+        elif ("check" in processed):
+            action = "check"
+            final_amount = 0
+        else:
+            action = "fold"
+            self.is_active = False
+            final_amount = 0
+
         if(self.chips == 0):
             self.all_in = True
-        return effective_blind
+        self.amount_in += final_amount
+        return action, final_amount
+
+    @staticmethod
+    def attempt_bet(chips, amount):
+        actual_bet = min(amount, chips)
+        chips -= actual_bet
+        return chips, actual_bet
+
+    def post_blind(self, amount):
+        self.chips, final_amount = Player.attempt_bet(self.chips, amount)
+        if(self.chips == 0):
+            self.all_in = True
+        self.amount_in = final_amount
+        return final_amount
+        
 """
     Don't forget me when we hit the ground
     You and me against the dying of the light
@@ -72,12 +108,12 @@ class TexasHoldEm:
         self.players.append(new_player)
         self.game_log += f"{name} buys in for ${buy_in}.\n"
     
-    def start_round(self):
-
-        self.deck = Deck.shuffle(Deck().cards)
+    def start_round(self, seed=None):
+        prev_highest_bet = 0
+        self.deck = Deck.shuffle(Deck().cards, seed)
 
         # Print metadata
-        self.game_log += "\n\nNew round started.\n\n"
+        self.game_log += "\nNew round started.\n\n"
         # Set positions.
         position_names = TexasHoldEm.POSITIONS_PER_PLAYERCOUNT[len(self.players)]
         # Post blinds.
@@ -85,6 +121,7 @@ class TexasHoldEm:
         bb = 0
         sb_name = ''
         bb_name = ''
+        bb_index = -1
         for index, player in enumerate(self.players):
             player.position = position_names[index - self.player_index_of_button]
             if (player.position == "SB") or (len(self.players) == 2 and player.position == "BTN"):
@@ -93,25 +130,75 @@ class TexasHoldEm:
             elif (player.position == "BB"):
                 bb = player.post_blind(TexasHoldEm.BIG_BLIND)
                 bb_name = player.name
+                bb_index = index
+            else:
+                player.amount_in = 0
         self.game_log += f"{sb_name} posts small blind (${sb}).\n"
-        self.game_log += f"{sb_name} posts big blind (${bb}).\n"
+        self.game_log += f"{bb_name} posts big blind (${bb}).\n\n"
         # Add chips here
         self.pot += sb
         self.pot += bb
+        prev_highest_bet = bb
+        min_raise = bb
         # Distribute cards.
         for index, player in enumerate(self.players):
             self.deck, player.hole_cards = Deck.pop(self.deck, 2)
             self.game_log += f"Dealt two cards to {player.name} in {player.position} (${player.chips}).\n"
 
-        print(self.game_log)
+        self.game_log += "\nPREFLOP:\n"
+        # Bet, call, or fold.
+        # First to act is to the left of big blind.
+        action_ends = False
+
+        i = (bb_index + 1)%len(self.players)
+        last_to_act = self.players[bb_index]
+        inactive = set()
+        prev_actor = None
+        while not action_ends:
+
+            player = self.players[i]
+
+            if player in inactive:
+                i += 1
+                i %= len(self.players)
+                continue
+            # TODO: For some reason, Carol is posting both small blind and big blind.
+            # TODO: Another issue: Action ended too early. See attached, saved to desktop
+            action, bet_size = player.act(self.game_log, prev_highest_bet, min_raise)
+
+            self.game_log += f"{player.name} {action}s"
+            if action == "raise":
+                self.game_log += f" to ${player.amount_in}"
+                min_raise = player.amount_in - prev_highest_bet
+                prev_highest_bet = player.amount_in
+                last_to_act = prev_actor
+
+            if player.all_in:
+                self.game_log += f" and is all-in"
+            self.game_log += ".\n"
+            
+            if action == "fold" or player.all_in:
+                inactive.add(player)
+            else:
+                prev_actor = player
+
+            everyone_folded = (len(inactive) == len(self.players) - 1)
+            pot_is_right = (player == last_to_act and action != "raise")
+            if(everyone_folded or pot_is_right):
+                print(f"Everyone folded? {everyone_folded}. Pot's right? {pot_is_right}.")
+                action_ends = True
+
+            i += 1
+            i %= len(self.players)
+
 
 t = TexasHoldEm()
-t.add_player("bb", TexasHoldEm.MAX_BUY_IN)
-t.add_player("cc", TexasHoldEm.MAX_BUY_IN)
-t.add_player("dd", TexasHoldEm.MAX_BUY_IN)
-t.add_player("ee", TexasHoldEm.MAX_BUY_IN)
-t.add_player("ff", TexasHoldEm.MAX_BUY_IN)
-t.add_player("gg", TexasHoldEm.MAX_BUY_IN)
-t.start_round()
+t.add_player("Ben", TexasHoldEm.MAX_BUY_IN)
+t.add_player("Carol", TexasHoldEm.MAX_BUY_IN)
+t.add_player("John", TexasHoldEm.MAX_BUY_IN)
+t.add_player("Stacy", TexasHoldEm.MAX_BUY_IN)
+t.add_player("Matt", TexasHoldEm.MAX_BUY_IN)
+t.add_player("Jenna", TexasHoldEm.MAX_BUY_IN)
+t.start_round(seed=0)
 
 
