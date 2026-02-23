@@ -117,6 +117,114 @@ class TexasHoldEm:
             6: ["BTN", "SB", "BB", "UTG", "HJ", "CO"],
         }
 
+    @staticmethod
+    def find_first_to_act_postflop(remaining, postflop=True):
+        # The small blind, or the person to the right of the small blind.
+        scores = {"SB": 0, "BB": 1, "UTG": 2, "HJ": 3, "CO": 4, "BTN": 5}
+        return min(remaining, key = lambda player: scores[player.position])
+    
+    @staticmethod
+    def end_street(game_log, remaining_players, pot, deck, cards_to_pop=0):
+        if(len(remaining_players) == 1):
+            game_log += f"{remaining_players[0]} collects ${pot} from the pot.\n"
+            remaining_players[0].chips += pot
+            return game_log, remaining_players, pot, deck, cards_to_pop
+
+        game_log += f"\n"
+        for player in remaining_players:
+            game_log += f"{player.name} (${player.chips}) remains.\n"
+        game_log += f"Pot: ${pot}"
+
+        popped_cards = []
+        if(cards_to_pop > 0):
+            deck, popped_cards = Deck.pop(deck, cards_to_pop)
+
+        return game_log, remaining_players, pot, deck, popped_cards
+
+
+
+    @staticmethod 
+    def request_actions(round_name, big_blind_size, game_log, default_last_to_act, betting_players, pot, community_current=None, community_new=None):
+        game_log += f"\n{round_name}:"
+        if community_current is not None:
+            game_log += f" {community_current}"
+        if community_new is not None:
+            game_log += f" {community_new}"
+        game_log += "\n\n"
+
+        # Bet, call, or fold.
+        # First to act is to the left of big blind.
+        action_ends = False
+
+        default_lta_index = betting_players.index(default_last_to_act)
+
+        i = (default_lta_index + 1)%len(betting_players)
+        last_to_act = default_last_to_act
+        inactive = set()
+        prev_actor = last_to_act
+
+        prev_highest_bet = big_blind_size
+        min_raise = prev_highest_bet
+
+        all_in_players = set()
+
+        while not action_ends:
+
+            player = betting_players[i]
+
+            if player in inactive:
+                i += 1
+                i %= len(betting_players)
+                continue
+
+            if player.all_in:
+                i += 1
+                i %= len(betting_players)
+                all_in_players.add(player)
+                # In case everyone's all in.
+                if (player == last_to_act) and all_in_players == set(betting_players):
+                    return game_log, didnt_fold, pot
+
+                continue
+
+
+            action, bet_size = player.act(game_log, prev_highest_bet, min_raise)
+
+            game_log += f"{player.name} {action}s"
+            if action == "raise":
+                game_log += f" to ${player.amount_in}"
+                min_raise = player.amount_in - prev_highest_bet
+                prev_highest_bet = player.amount_in
+                last_to_act = prev_actor
+
+            if player.all_in:
+                game_log += f" and is all-in"
+            game_log += ".\n"
+            
+            if action == "fold":
+                inactive.add(player)
+            else:
+                prev_actor = player
+
+            everyone_folded = (len(inactive) == len(betting_players) - 1)
+            
+            pot_is_right = (player == last_to_act and action != "raise")
+            if(everyone_folded or pot_is_right):
+                print(f"Everyone folded? {everyone_folded}. Pot's right? {pot_is_right}.")
+                action_ends = True
+
+            i += 1
+            i %= len(betting_players)
+
+        didnt_fold = []
+
+        for player in betting_players:
+            if player in inactive:
+                continue
+            didnt_fold.append(player)
+            
+        return game_log, didnt_fold, pot 
+
     def __init__(self):
         self.pot = 0
         self.highest_bet = 0
@@ -133,7 +241,6 @@ class TexasHoldEm:
         self.game_log += f"{name} buys in for ${buy_in}.\n"
     
     def start_round(self, seed=None):
-        prev_highest_bet = 0
         self.deck = Deck.shuffle(Deck().cards, seed)
 
         # Print metadata
@@ -162,80 +269,68 @@ class TexasHoldEm:
         # Add chips here
         self.pot += sb
         self.pot += bb
-        prev_highest_bet = bb
-        min_raise = bb
-        # Distribute cards.
+        # Distribute hole cards.
         for index, player in enumerate(self.players):
             self.deck, player.hole_cards = Deck.pop(self.deck, 2)
             self.game_log += f"Dealt two cards to {player.name} in {player.position} (${player.chips}).\n"
 
-        self.game_log += "\nPREFLOP:\n"
-        # Bet, call, or fold.
-        # First to act is to the left of big blind.
-        action_ends = False
+        remaining_players = []
 
-        i = (bb_index + 1)%len(self.players)
-        last_to_act = self.players[bb_index]
-        inactive = set()
-        prev_actor = last_to_act
-        while not action_ends:
+        # PREFLOP
 
-            player = self.players[i]
+        self.game_log, remaining_players, self.pot = \
+            TexasHoldEm.request_actions("PREFLOP", self.BIG_BLIND, self.game_log, self.players[bb_index], self.players, self.pot)
 
-            if player in inactive or player.all_in:
-                i += 1
-                i %= len(self.players)
-                continue
+        self.game_log, remaining_players, self.pot, self.deck, flop_cards = \
+            TexasHoldEm.end_street(self.game_log, remaining_players, self.pot, self.deck, 3)
 
-            action, bet_size = player.act(self.game_log, prev_highest_bet, min_raise)
+        # FLOP
 
-            self.game_log += f"{player.name} {action}s"
-            if action == "raise":
-                self.game_log += f" to ${player.amount_in}"
-                min_raise = player.amount_in - prev_highest_bet
-                prev_highest_bet = player.amount_in
-                last_to_act = prev_actor
+        first = TexasHoldEm.find_first_to_act_postflop(self.players, remaining_players)
 
-            if player.all_in:
-                self.game_log += f" and is all-in"
-            self.game_log += ".\n"
-            
-            if action == "fold":
-                inactive.add(player)
-            else:
-                prev_actor = player
+        self.game_log, remaining_players, self.pot = \
+            TexasHoldEm.request_actions("FLOP", self.BIG_BLIND, self.game_log, first, remaining_players, self.pot, community_new=flop_cards)
 
-            everyone_folded = (len(inactive) == len(self.players) - 1)
-            
-            pot_is_right = (player == last_to_act and action != "raise")
-            if(everyone_folded or pot_is_right):
-                print(f"Everyone folded? {everyone_folded}. Pot's right? {pot_is_right}.")
-                action_ends = True
+        self.game_log, remaining_players, self.pot, self.deck, turn_card = \
+            TexasHoldEm.end_street(self.game_log, remaining_players, self.pot, self.deck, 1)
 
-            i += 1
-            i %= len(self.players)
+        # TURN
 
-        if(everyone_folded):
-            for player in self.players:
-                if player not in inactive:
-                    self.game_log += f"{player.name} collects ${self.pot} from the pot.\n"
-                    player.chips += self.pot
+        first = TexasHoldEm.find_first_to_act_postflop(self.players, remaining_players)
+
+        self.game_log, remaining_players, self.pot = \
+            TexasHoldEm.request_actions("TURN", self.BIG_BLIND, self.game_log, first, remaining_players, self.pot, community_new=turn_card)
+
+        self.game_log, remaining_players, self.pot, self.deck, river_card = \
+            TexasHoldEm.end_street(self.game_log, remaining_players, self.pot, self.deck, 1)
+
+        # RIVER
+
+        first = TexasHoldEm.find_first_to_act_postflop(self.players, remaining_players)
+
+        self.game_log, remaining_players, self.pot = \
+            TexasHoldEm.request_actions("TURN", self.BIG_BLIND, self.game_log, first, remaining_players, self.pot, community_new=turn_card)
+        
+        # TODO: "end action" and evaluate winner.
+        self.game_log, remaining_players, self.pot, self.deck, river_card = \
+            TexasHoldEm.end_street(self.game_log, remaining_players, self.pot, self.deck)
+
+
+        if(len(remaining_players) == 1):
+            game_log += f"{remaining_players[0]} collects ${self.pot} from the pot.\n"
+            player.chips += self.pot
             return
 
         self.game_log += f"\n"
-        for player in self.players:
-            if(player in inactive):
-                continue
-            self.game_log += f"{player.name} (${player.chips}) sees flop.\n"
-        self.deck, community_cards = Deck.pop(self.deck, 3)
-        self.game_log += f"\nFLOP: {community_cards}"
-        print(self.game_log)
-        # TODO: Another round of betting.
+        for player in remaining_players:
+            self.game_log += f"{player.name} (${player.chips}) remains.\n"
+        self.deck, flop_cards = Deck.pop(self.deck, 3)
 
         
 
 
-
+# Nice seed with overcards and two pocket pairs:
+# 1771810701714
 
 t = TexasHoldEm()
 t.add_player("Ben", TexasHoldEm.MAX_BUY_IN)
@@ -244,6 +339,6 @@ t.add_player("John", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Stacy", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Matt", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Jenna", TexasHoldEm.MAX_BUY_IN)
-t.start_round(1771690299718)
+t.start_round(1771810701714)
 
 
