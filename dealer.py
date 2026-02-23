@@ -1,5 +1,6 @@
 from deck import Deck, Hand
-from ollama import chat
+from ollama import chat, Client
+import os
 
 class Player:
     def __init__(self, name, buy_in):
@@ -11,6 +12,12 @@ class Player:
         self.position = ""
         self.hand_number = 0
         self.amount_in = 0
+
+    def __str__(self):
+        return f"{self.position}: {self.name} (${self.chips}) ${self.amount_in} {self.hole_cards}"
+    
+    __repr__ = __str__
+
 
     def build_local_context(self, is_check, prev_highest_bet, min_raise):
         call_all_in = ""
@@ -50,15 +57,35 @@ Choose from the following responses:
 
         print(f"\n\n\n{total_context}\n\n\n")
 
+        # glm-4.7-flash for local, but slow
+        """
         response = chat(model='glm-4.7-flash', messages=[
         {
             'role': 'user',
             'content': total_context,
         },
         ])
-
         print(response.message.content)
         processed = response.message.content.strip().lower()
+        """
+
+        client = Client(
+            host="https://ollama.com",
+            headers={'Authorization': 'Bearer ' + os.environ.get('OLLAMA_API_KEY')}
+        )
+        messages = [
+        {
+            'role': 'user',
+            'content': total_context,
+        },
+        ]
+
+        response = ""
+        for part in client.chat('gpt-oss:120b-cloud', messages=messages, stream=True):
+            print(part['message']['content'], end='', flush=True)
+            response += part['message']['content']
+
+        processed = response.strip().lower()
 
         # If they didn't follow instructions, split it by \n\n and prune all but the last instance.
         if(len(processed) > 11):
@@ -118,17 +145,17 @@ class TexasHoldEm:
         }
 
     @staticmethod
-    def find_first_to_act_postflop(remaining, postflop=True):
-        # The small blind, or the person to the right of the small blind.
+    def find_last_to_act_postflop(remaining, postflop=True):
+        # The BTN, or the person to the left of the BTN.
         scores = {"SB": 0, "BB": 1, "UTG": 2, "HJ": 3, "CO": 4, "BTN": 5}
-        return min(remaining, key = lambda player: scores[player.position])
+        return max(remaining, key = lambda player: scores[player.position])
     
     @staticmethod
     def end_street(game_log, remaining_players, pot, deck, cards_to_pop=0):
         if(len(remaining_players) == 1):
             game_log += f"{remaining_players[0]} collects ${pot} from the pot.\n"
             remaining_players[0].chips += pot
-            return game_log, remaining_players, pot, deck, cards_to_pop
+            return game_log, remaining_players, pot, deck, []
 
         game_log += f"\n"
         for player in remaining_players:
@@ -138,7 +165,6 @@ class TexasHoldEm:
         popped_cards = []
         if(cards_to_pop > 0):
             deck, popped_cards = Deck.pop(deck, cards_to_pop)
-
         return game_log, remaining_players, pot, deck, popped_cards
 
 
@@ -155,7 +181,8 @@ class TexasHoldEm:
         # Bet, call, or fold.
         # First to act is to the left of big blind.
         action_ends = False
-
+        print(betting_players)
+        print(default_last_to_act)
         default_lta_index = betting_players.index(default_last_to_act)
 
         i = (default_lta_index + 1)%len(betting_players)
@@ -183,6 +210,14 @@ class TexasHoldEm:
                 all_in_players.add(player)
                 # In case everyone's all in.
                 if (player == last_to_act) and all_in_players == set(betting_players):
+
+                    didnt_fold = []
+
+                    for player in betting_players:
+                        if player in inactive:
+                            continue
+                        didnt_fold.append(player)
+
                     return game_log, didnt_fold, pot
 
                 continue
@@ -243,7 +278,7 @@ class TexasHoldEm:
         self.game_log += f"{name} buys in for ${buy_in}.\n"
     
     def start_round(self, seed=None):
-        self.deck = Deck.shuffle(Deck().cards, seed)
+        self.deck, seed = Deck.shuffle(Deck().cards, seed)
 
         # Print metadata
         self.game_log += "\nNew round started.\n\n"
@@ -286,50 +321,61 @@ class TexasHoldEm:
         self.game_log, remaining_players, self.pot, self.deck, flop_cards = \
             TexasHoldEm.end_street(self.game_log, remaining_players, self.pot, self.deck, 3)
 
+        if(len(remaining_players) == 1):
+            return self.game_log
+
+
         # FLOP
 
-        first = TexasHoldEm.find_first_to_act_postflop(self.players, remaining_players)
+        last = TexasHoldEm.find_last_to_act_postflop(remaining_players)
 
         self.game_log, remaining_players, self.pot = \
-            TexasHoldEm.request_actions("FLOP", self.BIG_BLIND, self.game_log, first, remaining_players, self.pot, community_new=flop_cards)
+            TexasHoldEm.request_actions("FLOP", self.BIG_BLIND, self.game_log, last, remaining_players, self.pot, community_new=flop_cards)
 
         self.game_log, remaining_players, self.pot, self.deck, turn_card = \
             TexasHoldEm.end_street(self.game_log, remaining_players, self.pot, self.deck, 1)
 
+        if(len(remaining_players) == 1):
+            return self.game_log
+
         # TURN
 
-        first = TexasHoldEm.find_first_to_act_postflop(self.players, remaining_players)
+        last = TexasHoldEm.find_last_to_act_postflop(remaining_players)
 
         self.game_log, remaining_players, self.pot = \
-            TexasHoldEm.request_actions("TURN", self.BIG_BLIND, self.game_log, first, remaining_players, self.pot, community_new=turn_card)
+            TexasHoldEm.request_actions("TURN", self.BIG_BLIND, self.game_log, last, remaining_players, self.pot, community_current=flop_cards, community_new=turn_card)
 
         self.game_log, remaining_players, self.pot, self.deck, river_card = \
             TexasHoldEm.end_street(self.game_log, remaining_players, self.pot, self.deck, 1)
 
+        if(len(remaining_players) == 1):
+            return self.game_log
+
+
         # RIVER
 
-        first = TexasHoldEm.find_first_to_act_postflop(self.players, remaining_players)
+        last = TexasHoldEm.find_last_to_act_postflop(remaining_players)
 
         self.game_log, remaining_players, self.pot = \
-            TexasHoldEm.request_actions("TURN", self.BIG_BLIND, self.game_log, first, remaining_players, self.pot, community_new=turn_card)
+            TexasHoldEm.request_actions("RIVER", self.BIG_BLIND, self.game_log, last, remaining_players, self.pot, community_current=flop_cards + turn_card, community_new=river_card)
         
         # TODO: "end action" and evaluate winner.
         self.game_log, remaining_players, self.pot, self.deck, river_card = \
             TexasHoldEm.end_street(self.game_log, remaining_players, self.pot, self.deck)
 
-
         if(len(remaining_players) == 1):
-            game_log += f"{remaining_players[0]} collects ${self.pot} from the pot.\n"
-            player.chips += self.pot
-            return
+            return self.game_log
 
-        self.game_log += f"\n"
-        for player in remaining_players:
-            self.game_log += f"{player.name} (${player.chips}) remains.\n"
-        self.deck, flop_cards = Deck.pop(self.deck, 3)
+        winners = Hand.find_winners(remaining_players, flop_cards + turn_card + river_card)
 
-        
+        print(self.game_log)
 
+        s = ''
+        if(len(winners) > 1):
+            s = 's'
+        print(f"Winner{s} ({winners[0].hand_id}):")
+        for winner in winners:
+            print(winner.player.name)
 
 # Nice seed with overcards and two pocket pairs:
 # 1771810701714
@@ -342,5 +388,3 @@ t.add_player("Stacy", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Matt", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Jenna", TexasHoldEm.MAX_BUY_IN)
 t.start_round(1771810701714)
-
-
