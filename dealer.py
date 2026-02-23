@@ -19,7 +19,10 @@ class Player:
     __repr__ = __str__
 
 
-    def build_local_context(self, is_check, prev_highest_bet, min_raise):
+    def build_local_context(self, bet_occurred_this_street, prev_highest_bet, min_raise):
+
+        is_check = (not bet_occurred_this_street) or (self.amount_in == prev_highest_bet)
+
         call_all_in = ""
         check_or_call = "call"
         if(is_check):
@@ -51,9 +54,8 @@ Choose from the following responses:
 """
 
     def act(self, community_context, prev_highest_bet, bet_occurred_this_street, min_raise):
-        is_check = not bet_occurred_this_street
 
-        total_context = community_context + self.build_local_context(is_check, prev_highest_bet, min_raise)
+        total_context = community_context + self.build_local_context(bet_occurred_this_street, prev_highest_bet, min_raise)
 
         print(f"\n\n\n{total_context}\n\n\n")
 
