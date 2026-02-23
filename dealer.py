@@ -190,6 +190,8 @@ class TexasHoldEm:
 
             action, bet_size = player.act(game_log, prev_highest_bet, min_raise)
 
+            pot += bet_size
+            
             game_log += f"{player.name} {action}s"
             if action == "raise":
                 game_log += f" to ${player.amount_in}"
@@ -200,7 +202,7 @@ class TexasHoldEm:
             if player.all_in:
                 game_log += f" and is all-in"
             game_log += ".\n"
-            
+
             if action == "fold":
                 inactive.add(player)
             else:
