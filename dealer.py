@@ -14,7 +14,7 @@ class Player:
         self.amount_in = 0
 
     def __str__(self):
-        return f"{self.position}: {self.name} (${self.chips}) ${self.amount_in} {self.hole_cards}"
+        return f"{self.position}: {self.name} (${self.chips}) in for ${self.amount_in} with {self.hole_cards}"
     
     __repr__ = __str__
 
@@ -45,13 +45,13 @@ It's your turn to act. \n
 You've been dealt {self.hole_cards}.\n\
 You have {self.chips} in chips.\n
 Choose from the following responses:
-"{check_or_call}{call_all_in}"
+"{check_or_call}" {call_all_in}
 "fold"
 {ending}
 """
 
-    def act(self, community_context, prev_highest_bet, min_raise):
-        is_check = self.amount_in == prev_highest_bet
+    def act(self, community_context, prev_highest_bet, bet_occurred_this_street, min_raise):
+        is_check = not bet_occurred_this_street
 
         total_context = community_context + self.build_local_context(is_check, prev_highest_bet, min_raise)
 
@@ -172,6 +172,11 @@ class TexasHoldEm:
     @staticmethod 
     def request_actions(round_name, big_blind_size, game_log, default_last_to_act, betting_players, pot, community_current=None, community_new=None):
         game_log += f"\n{round_name}:"
+
+        bet_occurred_this_street = False
+        if(round_name == 'PREFLOP'):
+            bet_occurred_this_street = True
+
         if community_current is not None:
             game_log += f" {community_current}"
         if community_new is not None:
@@ -223,12 +228,13 @@ class TexasHoldEm:
                 continue
 
 
-            action, bet_size = player.act(game_log, prev_highest_bet, min_raise)
+            action, bet_size = player.act(game_log, prev_highest_bet, bet_occurred_this_street, min_raise)
 
             pot += bet_size
             
             game_log += f"{player.name} {action}s"
             if action == "raise":
+                bet_occurred_this_street = True
                 game_log += f" to ${player.amount_in}"
                 min_raise = player.amount_in - prev_highest_bet
                 prev_highest_bet = player.amount_in
@@ -368,17 +374,19 @@ class TexasHoldEm:
 
         winners = Hand.find_winners(remaining_players, flop_cards + turn_card + river_card)
 
-        print(self.game_log)
-
         s = ''
         if(len(winners) > 1):
             s = 's'
-        print(f"Winner{s} ({winners[0].hand_id}):")
+        self.game_log += f"Winner{s} ({winners[0].hand_id}):"
         for winner in winners:
-            print(winner.player.name)
+            self.game_log += winner.player.name
+        
+        return self.game_log
 
 # Nice seed with overcards and two pocket pairs:
 # 1771810701714
+# Three of a kind vs three of a kind
+# 1771848344641493
 
 t = TexasHoldEm()
 t.add_player("Ben", TexasHoldEm.MAX_BUY_IN)
@@ -387,4 +395,6 @@ t.add_player("John", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Stacy", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Matt", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Jenna", TexasHoldEm.MAX_BUY_IN)
-t.start_round(1771810701714)
+
+x = t.start_round()
+print(x)
