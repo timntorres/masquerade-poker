@@ -1,4 +1,4 @@
-from deck import Deck, Hand
+from deck import Deck, Hand, Card
 from dealer import Player, TexasHoldEm
 
 HAND_PROBABILITIES = \
@@ -14,6 +14,32 @@ HAND_PROBABILITIES = \
     "one pair": 0.422569,
     "high card": 0.501177
 }
+
+def test_specific_result(hole_card_array, community_cards):
+    a = [Player("Ben", TexasHoldEm.MAX_BUY_IN), \
+        Player("Carol", TexasHoldEm.MAX_BUY_IN), \
+        Player("Sasha", TexasHoldEm.MAX_BUY_IN), \
+        Player("Kevin", TexasHoldEm.MAX_BUY_IN), \
+        Player("Cory", TexasHoldEm.MAX_BUY_IN), \
+        Player("Amy", TexasHoldEm.MAX_BUY_IN)]
+    player_count = len(hole_card_array)
+
+    candidates = []
+    for i in range(player_count):
+        a[i].hole_cards = hole_card_array[i]
+        candidates.append(a[i])
+    
+    winners = Hand.find_winners(candidates, community_cards) 
+    for player in a:
+        print(f"{player}")
+    print(f"{community_cards}\n\n")
+    s = ''
+    if(len(winners) > 1):
+        s = 's'
+    print(f"Winner{s} ({winners[0].hand_id}):")
+    for winner in winners:
+        print(winner.player.name)
+
 
 def hand_evaluator_test():
 
@@ -81,4 +107,7 @@ def frequency_test():
             # print(f"Hand: {hand}\n  expected: {HAND_PROBABILITIES[hand] * trials}\n  actual: {actual}")
         print(f"{hand}: {percent_error}")
 
-hand_evaluator_test()
+# hand_evaluator_test()
+test_specific_result(
+    [[Card('Ah'), Card('Kd')], [Card('5d'), Card('Ad')]], 
+    [Card('Qh'), Card('3d'), Card('5c'), Card('8c'), Card('As')])

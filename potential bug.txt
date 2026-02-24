@@ -1,0 +1,587 @@
+1771931504780205
+
+
+
+Shuffling with seed 1771931504780205
+
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+
+Your name is Mr. Edward Hyde. You are cold, impulsive, and cruel. You are currently playing No-Limit Hold 'Em. Your playstyle is loose and aggressive. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [2c, 9c].
+You have 500 in chips.
+
+Choose from the following responses:
+"call" 
+"fold"
+"raise N"
+Such that N is a number between 5 and 500.
+
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!
+
+
+
+
+fold
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+
+Your name is Jay Gatsby. You are ambitious, performative, and naive. You are currently playing No-Limit Hold 'Em. Your playstyle is whale. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [8h, Ks].
+You have 500 in chips.
+
+Choose from the following responses:
+"call" 
+"fold"
+"raise N"
+Such that N is a number between 5 and 500.
+
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!
+
+
+
+
+call
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+
+Your name is Sherlock Holmes. You are eccentric, analytical, and detached. You are currently playing No-Limit Hold 'Em. Your playstyle is sharp and aggressive. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [Ac, 7c].
+You have 500 in chips.
+
+Choose from the following responses:
+"call" 
+"fold"
+"raise N"
+Such that N is a number between 5 and 500.
+
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!
+
+
+
+
+raise 15
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $20.
+
+Your name is Popeye. You are gruff, stubborn, and tough-talking. You are currently playing No-Limit Hold 'Em. Your playstyle is loose and aggressive. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [5d, Ad].
+You have 500 in chips.
+
+Choose from the following responses:
+"call" 
+"fold"
+"raise N"
+Such that N is a number between 15 and 500.
+
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!
+
+
+
+
+raise 60
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $20.
+Popeye raises to $80.
+
+Your name is Ebenezer Scrooge. You are cold-hearted, miserly, and greedy. You are currently playing No-Limit Hold 'Em. Your playstyle is Old Man Coffee – tight, passive, trappy, extremely narrow preflop range. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [Ah, Kd].
+You have 498 in chips.
+
+Choose from the following responses:
+"call" 
+"fold"
+"raise N"
+Such that N is a number between 60 and 498.
+
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!
+
+
+
+
+call
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $20.
+Popeye raises to $80.
+Ebenezer Scrooge calls.
+
+Your name is Dr. Victor Frankenstein. You are unstable, brilliant, delusional. You are currently playing No-Limit Hold 'Em. Your playstyle is cautious. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [Qc, Ts].
+You have 495 in chips.
+
+Choose from the following responses:
+"call" 
+"fold"
+"raise N"
+Such that N is a number between 60 and 495.
+
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!
+
+
+
+
+fold
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $20.
+Popeye raises to $80.
+Ebenezer Scrooge calls.
+Dr. Victor Frankenstein folds.
+
+Your name is Jay Gatsby. You are ambitious, performative, and naive. You are currently playing No-Limit Hold 'Em. Your playstyle is whale. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [8h, Ks].
+You have 495 in chips.
+
+Choose from the following responses:
+"call" 
+"fold"
+"raise N"
+Such that N is a number between 60 and 495.
+
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!
+
+
+
+
+call
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $20.
+Popeye raises to $80.
+Ebenezer Scrooge calls.
+Dr. Victor Frankenstein folds.
+Jay Gatsby calls.
+
+Your name is Sherlock Holmes. You are eccentric, analytical, and detached. You are currently playing No-Limit Hold 'Em. Your playstyle is sharp and aggressive. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [Ac, 7c].
+You have 480 in chips.
+
+Choose from the following responses:
+"call" 
+"fold"
+"raise N"
+Such that N is a number between 60 and 480.
+
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!
+
+
+
+
+raise 240
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $20.
+Popeye raises to $80.
+Ebenezer Scrooge calls.
+Dr. Victor Frankenstein folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $320.
+
+Your name is Popeye. You are gruff, stubborn, and tough-talking. You are currently playing No-Limit Hold 'Em. Your playstyle is loose and aggressive. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [5d, Ad].
+You have 420 in chips.
+
+Choose from the following responses:
+"call" 
+"fold"
+"raise N"
+Such that N is a number between 240 and 420.
+
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!
+
+
+
+
+call
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $20.
+Popeye raises to $80.
+Ebenezer Scrooge calls.
+Dr. Victor Frankenstein folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $320.
+Popeye calls.
+
+Your name is Ebenezer Scrooge. You are cold-hearted, miserly, and greedy. You are currently playing No-Limit Hold 'Em. Your playstyle is Old Man Coffee – tight, passive, trappy, extremely narrow preflop range. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [Ah, Kd].
+You have 420 in chips.
+
+Choose from the following responses:
+"call" 
+"fold"
+"raise N"
+Such that N is a number between 240 and 420.
+
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!
+
+
+
+
+raise 420
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $20.
+Popeye raises to $80.
+Ebenezer Scrooge calls.
+Dr. Victor Frankenstein folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $320.
+Popeye calls.
+Ebenezer Scrooge raises to $500 and is all-in.
+
+Your name is Jay Gatsby. You are ambitious, performative, and naive. You are currently playing No-Limit Hold 'Em. Your playstyle is whale. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [8h, Ks].
+You have 420 in chips.
+
+Choose from the following responses:
+"call"  (all in)
+"fold"
+
+
+Respond QUICKLY, with at most ONE word, and NO punctuation!
+
+
+
+
+fold
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $20.
+Popeye raises to $80.
+Ebenezer Scrooge calls.
+Dr. Victor Frankenstein folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $320.
+Popeye calls.
+Ebenezer Scrooge raises to $500 and is all-in.
+Jay Gatsby folds.
+
+Your name is Sherlock Holmes. You are eccentric, analytical, and detached. You are currently playing No-Limit Hold 'Em. Your playstyle is sharp and aggressive. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [Ac, 7c].
+You have 180 in chips.
+
+Choose from the following responses:
+"call"  (all in)
+"fold"
+
+
+Respond QUICKLY, with at most ONE word, and NO punctuation!
+
+
+
+
+fold
+
+
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $20.
+Popeye raises to $80.
+Ebenezer Scrooge calls.
+Dr. Victor Frankenstein folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $320.
+Popeye calls.
+Ebenezer Scrooge raises to $500 and is all-in.
+Jay Gatsby folds.
+Sherlock Holmes folds.
+
+Your name is Popeye. You are gruff, stubborn, and tough-talking. You are currently playing No-Limit Hold 'Em. Your playstyle is loose and aggressive. It's your 0th hand at this table with a strict time limit, so move quickly or be penalized. It's your turn to act. 
+
+You've been dealt [5d, Ad].
+You have 180 in chips.
+
+Choose from the following responses:
+"call"  (all in)
+"fold"
+
+
+Respond QUICKLY, with at most ONE word, and NO punctuation!
+
+
+
+
+callEveryone folded? False. Pot's right? True.
+
+New round started.
+
+Ebenezer Scrooge posts small blind ($2).
+Dr. Victor Frankenstein posts big blind ($5).
+
+Dealt two cards to Popeye in BTN ($500).
+Dealt two cards to Ebenezer Scrooge in SB ($498).
+Dealt two cards to Dr. Victor Frankenstein in BB ($495).
+Dealt two cards to Mr. Edward Hyde in UTG ($500).
+Dealt two cards to Jay Gatsby in HJ ($500).
+Dealt two cards to Sherlock Holmes in CO ($500).
+
+PREFLOP:
+
+Mr. Edward Hyde folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $20.
+Popeye raises to $80.
+Ebenezer Scrooge calls.
+Dr. Victor Frankenstein folds.
+Jay Gatsby calls.
+Sherlock Holmes raises to $320.
+Popeye calls.
+Ebenezer Scrooge raises to $500 and is all-in.
+Jay Gatsby folds.
+Sherlock Holmes folds.
+Popeye calls and is all-in.
+
+Popeye ($0) remains.
+Ebenezer Scrooge ($0) remains.
+Pot: $1405
+FLOP: [Qh, 3d, 5c]
+
+
+Popeye ($0) remains.
+Ebenezer Scrooge ($0) remains.
+Pot: $1405
+TURN: [Qh, 3d, 5c] [8c]
+
+
+Popeye ($0) remains.
+Ebenezer Scrooge ($0) remains.
+Pot: $1405
+RIVER: [Qh, 3d, 5c, 8c] [As]
+
+
+Popeye ($0) remains.
+Ebenezer Scrooge ($0) remains.
+Pot: $1405Winner (one pair): Popeye showed [5d, 5c, Ad, Qh, 8c]
+

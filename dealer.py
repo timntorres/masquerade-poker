@@ -39,12 +39,13 @@ class Player:
         self.all_in = False
         self.position = ""
         self.hand_number = 0
-        self.amount_in = 0
+        self.global_amount_in = 0
+        self.street_amount_in = 0
         self.personality = personality
         self.has_personality = (personality is not None)
 
     def __str__(self):
-        return f"{self.position}: {self.name} (${self.chips}) in for ${self.amount_in} with {self.hole_cards}"
+        return f"{self.position}: {self.name} (${self.chips}) in for ${self.global_amount_in} with {self.hole_cards}"
     
     __repr__ = __str__
 
@@ -60,58 +61,26 @@ class Player:
             players.append(p)
         return players
 
+    def build_local_context(self, pot, bet_occurred_this_street, prev_highest_street_amount_in, min_raise):
 
+        is_check = (not bet_occurred_this_street) or (self.street_amount_in == prev_highest_street_amount_in)
+        is_bet = (not bet_occurred_this_street)
 
-    def build_local_context_legacy(self, bet_occurred_this_street, prev_highest_bet, min_raise):
-
-        is_check = (not bet_occurred_this_street) or (self.amount_in == prev_highest_bet)
-
-        call_all_in = ""
-        check_or_call = "call"
-        if(is_check):
-            check_or_call = "check"
-
-        raise_is_an_option = prev_highest_bet - self.amount_in < self.chips
-
-        ending = f""""raise N"
-Such that N is a number between {min_raise} and {self.chips}.\n
-Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!""" if min_raise < self.chips else f"""\"raise {self.chips}" (all in).\n
-Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!"""
-
-        if(not raise_is_an_option):
-            call_all_in = " (all in)"
-            ending = """\n
-Respond QUICKLY, with at most ONE word, and NO punctuation!"""
-
-
-        return f"""\nYour name is {self.name}. \
-You are an expert at No-Limit Hold 'Em who makes extremely accurate decisions incredibly quickly. \
-It's your {self.hand_number}th hand at this table with a strict time limit. Trust your instinct and make snap judgments. \
-It's your turn to act. \n
-You've been dealt {self.hole_cards}.\n\
-You have {self.chips} in chips.\n
-Choose from the following responses:
-"{check_or_call}" {call_all_in}
-"fold"
-{ending}
-"""
-
-    def build_local_context(self, bet_occurred_this_street, prev_highest_bet, min_raise):
-
-        is_check = (not bet_occurred_this_street) or (self.amount_in == prev_highest_bet)
+        bet_or_raise = "raise"
+        if(is_bet):
+            bet_or_raise = "bet"
 
         call_all_in = ""
         check_or_call = "call"
         if(is_check):
             check_or_call = "check"
 
-        raise_is_an_option = prev_highest_bet - self.amount_in < self.chips
+        raise_is_an_option = prev_highest_street_amount_in - self.street_amount_in < self.chips
 
-        ending = f""""raise N"
+        ending = f""""{bet_or_raise} N"
 Such that N is a number between {min_raise} and {self.chips}.\n
 Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!""" if min_raise < self.chips else f"""\"raise {self.chips}" (all in).\n
 Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!"""
-
         if(not raise_is_an_option):
             call_all_in = " (all in)"
             ending = """\n
@@ -119,83 +88,21 @@ Respond QUICKLY, with at most ONE word, and NO punctuation!"""
 
         p = self.personality
 
-        return f"""\nYour name is {self.name}. You are {p.traits}. \
-You are currently playing No-Limit Hold 'Em. Your playstyle is {p.playstyle}. \
-It's your {self.hand_number}th hand at this table with a strict time limit, so move quickly or be penalized. \
-It's your turn to act. \n
+        return f"""\nThere's ${pot} in the pot.\n\
+You have ${self.chips} in chips.\n\
 You've been dealt {self.hole_cards}.\n\
-You have {self.chips} in chips.\n
+It's your turn to act.\n\
+\nYour name is {self.name}. You are {p.traits}. \
+You are currently playing No-Limit Hold 'Em. Your playstyle is {p.playstyle}. \
+It's your {self.hand_number}th hand at this table with a strict time limit, so move quickly or be penalized.\n\n\
 Choose from the following responses:
 "{check_or_call}" {call_all_in}
 "fold"
 {ending}
 """
+    def act(self, pot, community_context, prev_highest_street_amount_in, bet_occurred_this_street, min_raise):
 
-    def act_legacy(self, community_context, prev_highest_bet, bet_occurred_this_street, min_raise):
-        total_context = community_context + self.build_local_context_legacy(bet_occurred_this_street, prev_highest_bet, min_raise)
-
-        print(f"\n\n\n{total_context}\n\n\n")
-
-        # glm-4.7-flash for local, but slow
-        """
-        response = chat(model='glm-4.7-flash', messages=[
-        {
-            'role': 'user',
-            'content': total_context,
-        },
-        ])
-        print(response.message.content)
-        processed = response.message.content.strip().lower()
-        """
-
-        client = Client(
-            host="https://ollama.com",
-            headers={'Authorization': 'Bearer ' + os.environ.get('OLLAMA_API_KEY')}
-        )
-        messages = [
-        {
-            'role': 'user',
-            'content': total_context,
-        },
-        ]
-
-        response = ""
-        for part in client.chat('gpt-oss:120b-cloud', messages=messages, stream=True):
-            print(part['message']['content'], end='', flush=True)
-            response += part['message']['content']
-
-        processed = response.strip().lower()
-
-        # If they didn't follow instructions, split it by \n\n and prune all but the last instance.
-        if(len(processed) > 11):
-            processed = processed.split('\n\n')[-1]
-
-        if("raise" in processed):
-            action = "raise"
-            raise_amount = int(processed.split()[-1])
-            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_bet + raise_amount - self.amount_in)
-        elif ("call" in processed):
-            action = "call"
-            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_bet - self.amount_in)
-        elif ("check" in processed):
-            action = "check"
-            final_amount = 0
-        else:
-            action = "fold"
-            self.is_active = False
-            final_amount = 0
-
-        if(self.chips == 0):
-            self.all_in = True
-        self.amount_in += final_amount
-        return action, final_amount
-    
-
-    def act(self, community_context, prev_highest_bet, bet_occurred_this_street, min_raise):
-        if(not self.has_personality):
-            return self.act_legacy(community_context, prev_highest_bet, bet_occurred_this_street, min_raise)
-
-        total_context = community_context + self.build_local_context(bet_occurred_this_street, prev_highest_bet, min_raise)
+        total_context = community_context + self.build_local_context(pot, bet_occurred_this_street, prev_highest_street_amount_in, min_raise)
 
         print(f"\n\n\n{total_context}\n\n\n")
 
@@ -233,13 +140,17 @@ Choose from the following responses:
         if(len(processed) > 11):
             processed = processed.split('\n\n')[-1]
 
-        if("raise" in processed):
+        if("bet" in processed):
+            action = "bet"
+            bet_amount = int(processed.split()[-1])
+            self.chips, final_amount = Player.attempt_bet(self.chips, bet_amount)
+        elif("raise" in processed):
             action = "raise"
             raise_amount = int(processed.split()[-1])
-            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_bet + raise_amount - self.amount_in)
+            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_street_amount_in + raise_amount - self.street_amount_in)
         elif ("call" in processed):
             action = "call"
-            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_bet - self.amount_in)
+            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_street_amount_in - self.street_amount_in)
         elif ("check" in processed):
             action = "check"
             final_amount = 0
@@ -250,7 +161,8 @@ Choose from the following responses:
 
         if(self.chips == 0):
             self.all_in = True
-        self.amount_in += final_amount
+        self.global_amount_in += final_amount
+        self.street_amount_in += final_amount
         return action, final_amount
 
     @staticmethod
@@ -263,7 +175,8 @@ Choose from the following responses:
         self.chips, final_amount = Player.attempt_bet(self.chips, amount)
         if(self.chips == 0):
             self.all_in = True
-        self.amount_in = final_amount
+        self.street_amount_in = final_amount
+        self.global_amount_in = final_amount
         return final_amount
         
 """
@@ -301,8 +214,9 @@ class TexasHoldEm:
 
         game_log += f"\n"
         for player in remaining_players:
+            # Flush the street_amount_in
+            player.street_amount_in = 0
             game_log += f"{player.name} (${player.chips}) remains.\n"
-        game_log += f"Pot: ${pot}"
 
         popped_cards = []
         if(cards_to_pop > 0):
@@ -337,8 +251,8 @@ class TexasHoldEm:
         inactive = set()
         prev_actor = last_to_act
 
-        prev_highest_bet = big_blind_size
-        min_raise = prev_highest_bet
+        prev_highest_street_amount_in = big_blind_size
+        min_raise = prev_highest_street_amount_in
 
         all_in_players = set()
 
@@ -370,16 +284,23 @@ class TexasHoldEm:
                 continue
 
 
-            action, bet_size = player.act(game_log, prev_highest_bet, bet_occurred_this_street, min_raise)
+            action, bet_size = player.act(pot, game_log, prev_highest_street_amount_in, bet_occurred_this_street, min_raise)
 
             pot += bet_size
             
             game_log += f"{player.name} {action}s"
-            if action == "raise":
+           
+
+            if action == 'bet':
                 bet_occurred_this_street = True
-                game_log += f" to ${player.amount_in}"
-                min_raise = player.amount_in - prev_highest_bet
-                prev_highest_bet = player.amount_in
+                game_log += f" ${bet_size}"
+                min_raise = bet_size
+                prev_highest_street_amount_in = bet_size
+            if action == 'raise':
+                bet_occurred_this_street = True
+                game_log += f" to ${player.street_amount_in}"
+                min_raise = player.street_amount_in - prev_highest_street_amount_in
+                prev_highest_street_amount_in = player.street_amount_in
                 last_to_act = prev_actor
 
             if player.all_in:
@@ -393,9 +314,10 @@ class TexasHoldEm:
 
             everyone_folded = (len(inactive) == len(betting_players) - 1)
             
-            pot_is_right = (player == last_to_act and action != "raise")
+            did_bet = (action == "raise") or (action == "bet")
+            pot_is_right = (player == last_to_act and (not did_bet))
             if(everyone_folded or pot_is_right):
-                print(f"Everyone folded? {everyone_folded}. Pot's right? {pot_is_right}.")
+                print(f"\nEveryone folded? {everyone_folded}. Pot's right? {pot_is_right}.\n")
                 action_ends = True
 
             i += 1
@@ -457,7 +379,7 @@ class TexasHoldEm:
                 bb_name = player.name
                 bb_index = index
             else:
-                player.amount_in = 0
+                player.street_amount_in = 0
         self.game_log += f"{sb_name} posts small blind (${sb}).\n"
         self.game_log += f"{bb_name} posts big blind (${bb}).\n\n"
         # Add chips here
@@ -516,13 +438,11 @@ class TexasHoldEm:
         self.game_log, remaining_players, self.pot = \
             TexasHoldEm.request_actions("RIVER", self.BIG_BLIND, self.game_log, last, remaining_players, self.pot, community_current=flop_cards + turn_card, community_new=river_card)
         
-        # TODO: "end action" and evaluate winner.
-        self.game_log, remaining_players, self.pot, self.deck, river_card = \
+        self.game_log, remaining_players, self.pot, self.deck, disregard = \
             TexasHoldEm.end_street(self.game_log, remaining_players, self.pot, self.deck)
 
         if(len(remaining_players) == 1):
             return self.game_log
-
         winners = Hand.find_winners(remaining_players, flop_cards + turn_card + river_card)
 
         s = ''
@@ -534,11 +454,6 @@ class TexasHoldEm:
             self.game_log += f" showed {winner.cards}\n"
         
         return self.game_log
-
-# Nice seed with overcards and two pocket pairs:
-# 1771810701714
-# Three of a kind vs three of a kind
-# 1771848344641493
 
 init_rand()
 
