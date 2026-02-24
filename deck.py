@@ -1,4 +1,3 @@
-import random
 import heapq
 import math
 import time
@@ -18,16 +17,6 @@ class Deck:
             for suit in Deck.SUITS:
                 deck.append(Card(f"{rank}{suit}"))
         return deck
-
-    @staticmethod
-    def shuffle(deck, seed=None, silent=False):
-        if(seed == None):
-            seed = math.floor(time.time()*1000000)
-        if(not silent):
-            print(f"Shuffling with seed {seed}")
-        random.seed(seed)
-        random.shuffle(deck)
-        return deck, seed
 
     @staticmethod
     def pop(deck, amount=1):

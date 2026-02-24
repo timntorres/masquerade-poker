@@ -1,9 +1,37 @@
 from deck import Deck, Hand
 from ollama import chat, Client
+from rand_manager import shuffle, init_rand
 import os
+import yaml
 
+class Personality:
+    def __init__(self, name, traits, playstyle, quotes):
+        self.name = name
+        self.traits = traits
+        self.playstyle = playstyle
+        self.quotes = quotes
+
+    @staticmethod
+    def load_personalities(filename):
+        with open(filename, 'r') as file:
+            try:
+                data = yaml.safe_load(file)
+                characters = data['characters']
+                personalities = []
+                for character in characters:
+                    p = Personality(
+                        character['name'],
+                        character['traits'],
+                        character['playstyle'],
+                        character['quotes']
+                    )
+                    personalities.append(p)
+                return personalities
+            except yaml.YAMLError as exc:
+                print(exc)
+                exit()
 class Player:
-    def __init__(self, name, buy_in):
+    def __init__(self, name, buy_in, personality=None):
         self.name = name
         self.chips = buy_in
         self.hole_cards = []
@@ -12,14 +40,29 @@ class Player:
         self.position = ""
         self.hand_number = 0
         self.amount_in = 0
+        self.personality = personality
+        self.has_personality = (personality is not None)
 
     def __str__(self):
         return f"{self.position}: {self.name} (${self.chips}) in for ${self.amount_in} with {self.hole_cards}"
     
     __repr__ = __str__
 
+    @staticmethod
+    def init_players(personalities, buy_in):
+        players = []
+        for personality in personalities:
+            p = Player(
+                personality.name,
+                buy_in,
+                personality
+            )
+            players.append(p)
+        return players
 
-    def build_local_context(self, bet_occurred_this_street, prev_highest_bet, min_raise):
+
+
+    def build_local_context_legacy(self, bet_occurred_this_street, prev_highest_bet, min_raise):
 
         is_check = (not bet_occurred_this_street) or (self.amount_in == prev_highest_bet)
 
@@ -53,7 +96,104 @@ Choose from the following responses:
 {ending}
 """
 
+    def build_local_context(self, bet_occurred_this_street, prev_highest_bet, min_raise):
+
+        is_check = (not bet_occurred_this_street) or (self.amount_in == prev_highest_bet)
+
+        call_all_in = ""
+        check_or_call = "call"
+        if(is_check):
+            check_or_call = "check"
+
+        raise_is_an_option = prev_highest_bet - self.amount_in < self.chips
+
+        ending = f""""raise N"
+Such that N is a number between {min_raise} and {self.chips}.\n
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!""" if min_raise < self.chips else f"""\"raise {self.chips}" (all in).\n
+Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!"""
+
+        if(not raise_is_an_option):
+            call_all_in = " (all in)"
+            ending = """\n
+Respond QUICKLY, with at most ONE word, and NO punctuation!"""
+
+        p = self.personality
+
+        return f"""\nYour name is {self.name}. You are {p.traits}. \
+You are currently playing No-Limit Hold 'Em. Your playstyle is {p.playstyle}. \
+It's your {self.hand_number}th hand at this table with a strict time limit, so move quickly or be penalized. \
+It's your turn to act. \n
+You've been dealt {self.hole_cards}.\n\
+You have {self.chips} in chips.\n
+Choose from the following responses:
+"{check_or_call}" {call_all_in}
+"fold"
+{ending}
+"""
+
+    def act_legacy(self, community_context, prev_highest_bet, bet_occurred_this_street, min_raise):
+        total_context = community_context + self.build_local_context_legacy(bet_occurred_this_street, prev_highest_bet, min_raise)
+
+        print(f"\n\n\n{total_context}\n\n\n")
+
+        # glm-4.7-flash for local, but slow
+        """
+        response = chat(model='glm-4.7-flash', messages=[
+        {
+            'role': 'user',
+            'content': total_context,
+        },
+        ])
+        print(response.message.content)
+        processed = response.message.content.strip().lower()
+        """
+
+        client = Client(
+            host="https://ollama.com",
+            headers={'Authorization': 'Bearer ' + os.environ.get('OLLAMA_API_KEY')}
+        )
+        messages = [
+        {
+            'role': 'user',
+            'content': total_context,
+        },
+        ]
+
+        response = ""
+        for part in client.chat('gpt-oss:120b-cloud', messages=messages, stream=True):
+            print(part['message']['content'], end='', flush=True)
+            response += part['message']['content']
+
+        processed = response.strip().lower()
+
+        # If they didn't follow instructions, split it by \n\n and prune all but the last instance.
+        if(len(processed) > 11):
+            processed = processed.split('\n\n')[-1]
+
+        if("raise" in processed):
+            action = "raise"
+            raise_amount = int(processed.split()[-1])
+            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_bet + raise_amount - self.amount_in)
+        elif ("call" in processed):
+            action = "call"
+            self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_bet - self.amount_in)
+        elif ("check" in processed):
+            action = "check"
+            final_amount = 0
+        else:
+            action = "fold"
+            self.is_active = False
+            final_amount = 0
+
+        if(self.chips == 0):
+            self.all_in = True
+        self.amount_in += final_amount
+        return action, final_amount
+    
+
     def act(self, community_context, prev_highest_bet, bet_occurred_this_street, min_raise):
+        if(not self.has_personality):
+            return self.act_legacy(community_context, prev_highest_bet, bet_occurred_this_street, min_raise)
 
         total_context = community_context + self.build_local_context(bet_occurred_this_street, prev_highest_bet, min_raise)
 
@@ -188,8 +328,8 @@ class TexasHoldEm:
         # Bet, call, or fold.
         # First to act is to the left of big blind.
         action_ends = False
-        print(betting_players)
-        print(default_last_to_act)
+        # print(betting_players)
+        # print(default_last_to_act)
         default_lta_index = betting_players.index(default_last_to_act)
 
         i = (default_lta_index + 1)%len(betting_players)
@@ -278,6 +418,13 @@ class TexasHoldEm:
         self.player_index_of_button = 0
         self.game_log = ''
 
+    def add_players(self, game_log, options):
+        options = shuffle(options)
+        for i in range(6):
+            self.players.append(players[i])
+            self.game_log += f"{players[i].name} buys in for ${players[i].chips}.\n"
+        return game_log
+
     def add_player(self, name, buy_in):
         if len(self.players) >= 6:
             return None
@@ -285,8 +432,10 @@ class TexasHoldEm:
         self.players.append(new_player)
         self.game_log += f"{name} buys in for ${buy_in}.\n"
     
-    def start_round(self, seed=None):
-        self.deck, seed = Deck.shuffle(Deck().cards, seed)
+    def start_round(self, game_log=""):
+        self.game_log = game_log
+    
+        self.deck = shuffle(Deck.generate_deck())
 
         # Print metadata
         self.game_log += "\nNew round started.\n\n"
@@ -391,7 +540,25 @@ class TexasHoldEm:
 # Three of a kind vs three of a kind
 # 1771848344641493
 
+init_rand()
+
+personalities = Personality.load_personalities('characters.yaml')
+players = Player.init_players(personalities, TexasHoldEm.MAX_BUY_IN)
+
 t = TexasHoldEm()
+game_log = ""
+game_log = t.add_players(game_log, players)
+
+game_log = t.start_round(game_log)
+
+# TODO: Go face-up for all ins
+print(game_log)
+
+"""
+t = TexasHoldEm()
+
+
+
 t.add_player("Ben", TexasHoldEm.MAX_BUY_IN)
 t.add_player("Carol", TexasHoldEm.MAX_BUY_IN)
 t.add_player("John", TexasHoldEm.MAX_BUY_IN)
@@ -401,3 +568,4 @@ t.add_player("Jenna", TexasHoldEm.MAX_BUY_IN)
 
 x = t.start_round()
 print(x)
+"""

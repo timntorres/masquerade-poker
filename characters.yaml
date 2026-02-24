@@ -10,7 +10,7 @@ characters:
 
   - name: Sherlock Holmes
     traits: eccentric, analytical, and detached
-    playstyle: tight and aggressive
+    playstyle: sharp and aggressive
     quotes:
       - It is my business to know what other people do not know.
       - I crave for mental exaltation.
@@ -54,7 +54,7 @@ characters:
 
   - name: Cleopatra
     traits: intellectual, ruthless, and politically savvy
-    playstyle: tight and aggressive
+    playstyle: sharp and aggressive
     quotes:
       - Give me my robe, put on my crown; I have immortal longings in me.
       - I am fire and air; my other elements I give to baser life.
@@ -132,8 +132,8 @@ characters:
       - Oh, papa! papa! if only you were here!
 
   - name: Betty Boop
-    traits: flirtatious, happy-go-lucky, street-smart
-    playstyle: tight and tricky
+    traits: flirtatious, happy-go-lucky, and street-smart
+    playstyle: sharp and tricky
     quotes:
       - Boop-Oop-a-Doop!
       - Oh, you naughty boys!
