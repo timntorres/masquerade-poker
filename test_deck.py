@@ -1,5 +1,6 @@
 from deck import Deck, Hand, Card
 from dealer import Player, TexasHoldEm
+from rand_manager import shuffle, init_rand
 
 HAND_PROBABILITIES = \
 { 
@@ -46,7 +47,8 @@ def hand_evaluator_test():
     results = {}
 
     for i in range(100000):
-        deck, seed = Deck.shuffle(Deck().cards, silent=True)
+        init_rand()
+        deck = shuffle(Deck().generate_deck())
         a = [Player("Ben", TexasHoldEm.MAX_BUY_IN), \
             Player("Carol", TexasHoldEm.MAX_BUY_IN), \
             Player("Sasha", TexasHoldEm.MAX_BUY_IN), \
@@ -64,7 +66,7 @@ def hand_evaluator_test():
         # if(len(winners) == 1):
         #    continue
 
-        print(f"\n\n\nHand #{i} ({seed})\n\n\n")
+        print(f"\n\n\nHand #{i}\n\n\n")
 
         for player in a:
             print(f"{player}")
@@ -84,7 +86,7 @@ def frequency_test():
     trials = 10000
     results = {}
     for i in range(trials):
-        deck = Deck.shuffle(Deck().cards)
+        deck = shuffle(Deck().generate_deck())
         deck, cards = Deck.pop(deck, 5)
 
         hand_object = Hand.classify(cards)
@@ -107,7 +109,10 @@ def frequency_test():
             # print(f"Hand: {hand}\n  expected: {HAND_PROBABILITIES[hand] * trials}\n  actual: {actual}")
         print(f"{hand}: {percent_error}")
 
-# hand_evaluator_test()
-test_specific_result(
+# frequency_test()
+"""
+#test_specific_result(
     [[Card('Ah'), Card('Kd')], [Card('5d'), Card('Ad')]], 
     [Card('Qh'), Card('3d'), Card('5c'), Card('8c'), Card('As')])
+"""
+# hand_evaluator_test()

@@ -464,15 +464,18 @@ class TexasHoldEm:
             self.game_log += f" showed {winner.cards}\n"
         
         return self.game_log
-init_rand()
 
-personalities = Personality.load_personalities('characters.yaml')
-players = Player.init_players(personalities, TexasHoldEm.MAX_BUY_IN)
 
-t = TexasHoldEm()
-game_log = ""
-game_log = t.add_players(game_log, players)
+if __name__ == "__main__":
+    init_rand()
 
-game_log = t.start_round(game_log)
+    personalities = Personality.load_personalities('characters.yaml')
+    players = Player.init_players(personalities, TexasHoldEm.MAX_BUY_IN)
 
-print(game_log)
+    t = TexasHoldEm()
+    game_log = ""
+    game_log = t.add_players(game_log, players)
+
+    game_log = t.start_round(game_log)
+
+    print(game_log)
