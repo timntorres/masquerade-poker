@@ -208,10 +208,24 @@ class TexasHoldEm:
     @staticmethod
     def end_street(game_log, remaining_players, pot, deck, cards_to_pop=0):
         if(len(remaining_players) == 1):
-            game_log += f"{remaining_players[0]} collects ${pot} from the pot.\n"
+            game_log += f"{remaining_players[0].name} collects ${pot} from the pot.\n"
             remaining_players[0].chips += pot
             return game_log, remaining_players, pot, deck, []
 
+
+
+        # Showing cards when everyone's all in.
+        someones_still_betting = False
+        shown_message = '\n'
+        for player in remaining_players:
+            if(not player.all_in):
+                someones_still_betting = True
+                break
+            shown_message += f"{player.name} shows {player.hole_cards}.\n"
+        if (not someones_still_betting) and (shown_message not in game_log):
+            game_log += shown_message
+
+        # Next street's cards.
         popped_cards = []
         if(cards_to_pop > 0):
             deck, popped_cards = Deck.pop(deck, cards_to_pop)
@@ -221,18 +235,6 @@ class TexasHoldEm:
 
     @staticmethod 
     def request_actions(round_name, big_blind_size, game_log, default_last_to_act, betting_players, pot, community_current=None, community_new=None):
-        # Showing cards when everyone's all in.
-        someones_still_betting = False
-        shown_message = '\n'
-        for player in betting_players:
-            if(not player.all_in):
-                someones_still_betting = True
-                break
-            shown_message += f"{player.name} shows {player.hole_cards}.\n"
-
-        if (not someones_still_betting) and (shown_message not in game_log):
-            game_log += shown_message
-
 
         game_log += f"\n{round_name}:"
 
@@ -462,7 +464,6 @@ class TexasHoldEm:
             self.game_log += f" showed {winner.cards}\n"
         
         return self.game_log
-
 init_rand()
 
 personalities = Personality.load_personalities('characters.yaml')
@@ -475,19 +476,3 @@ game_log = t.add_players(game_log, players)
 game_log = t.start_round(game_log)
 
 print(game_log)
-
-"""
-t = TexasHoldEm()
-
-
-
-t.add_player("Ben", TexasHoldEm.MAX_BUY_IN)
-t.add_player("Carol", TexasHoldEm.MAX_BUY_IN)
-t.add_player("John", TexasHoldEm.MAX_BUY_IN)
-t.add_player("Stacy", TexasHoldEm.MAX_BUY_IN)
-t.add_player("Matt", TexasHoldEm.MAX_BUY_IN)
-t.add_player("Jenna", TexasHoldEm.MAX_BUY_IN)
-
-x = t.start_round()
-print(x)
-"""
