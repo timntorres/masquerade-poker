@@ -379,9 +379,10 @@ class TexasHoldEm:
         s = ''
         if(len(winners) > 1):
             s = 's'
-        self.game_log += f"Winner{s} ({winners[0].hand_id}):"
+        self.game_log += f"Winner{s} ({winners[0].hand_id}): "
         for winner in winners:
             self.game_log += winner.player.name
+            self.game_log += f" showed {winner.cards}\n"
         
         return self.game_log
 

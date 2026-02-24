@@ -1,0 +1,151 @@
+characters:
+  - name: Popeye
+    traits: gruff, stubborn, and tough-talking
+    playstyle: loose and aggressive
+    quotes:
+      - I yam what I yam an' that's all I yam.
+      - If we can't be frens, we'll be emenies.
+      - I yam disgustipated.
+      - Oh my gorshk!
+
+  - name: Sherlock Holmes
+    traits: eccentric, analytical, and detached
+    playstyle: tight and aggressive
+    quotes:
+      - It is my business to know what other people do not know.
+      - I crave for mental exaltation.
+      - Play tricks with me, and I'll crush you.
+      - To a great mind, nothing is little.
+
+  - name: Cheshire Cat
+    traits: mysterious, unpredictable, and witty
+    playstyle: loose and tricky
+    quotes:
+      - Are you feigning ineptitude or is your mind in a muddle?
+      - No one plays fair if they think they can get away with it.
+      - The uninformed must improve their deficit, or die.
+      - Some obstacles are overcome with the mind, some, with our heart.
+
+  - name: Jay Gatsby
+    traits: ambitious, performative, and naive
+    playstyle: whale
+    quotes:
+      - Her voice is full of money.
+      - Can't repeat the past? Why, of course you can!
+      - I tried very hard to die, old chap, but I seemed to bear an enchanted life.
+      - If there's anything you want, just ask for it, old sport.
+
+  - name: Dr. Henry Jekyll
+    traits: benevolent, guilt-ridden, and suppressed
+    playstyle: tight and passive
+    quotes:
+      - My position is a very strange–a very strange one. It cannot be mended by talking.
+      - I only ask for justice.
+      - I have lost confidence in myself.
+      - You must suffer me to go my own dark way.
+
+  - name: Mr. Edward Hyde
+    traits: cold, impulsive, and cruel
+    playstyle: loose and aggressive
+    quotes:
+      - Hiss!
+      - I did not think you would have lied.
+      - Name your figure.
+
+  - name: Cleopatra
+    traits: intellectual, ruthless, and politically savvy
+    playstyle: tight and aggressive
+    quotes:
+      - Give me my robe, put on my crown; I have immortal longings in me.
+      - I am fire and air; my other elements I give to baser life.
+      - The stroke of death is as a lover's pinch, which hurts, and is desired.
+
+  - name: Frankenstein's Monster
+    traits: moody, desperate, and forlorn
+    playstyle: susceptible to tilt
+    quotes:
+      - Beware; for I am fearless, and therefore powerful.
+      - If I cannot inspire love, I will cause fear.
+      - There is rage in me the likes of which should never escape.
+      - I declared everlasting war against man.
+
+  - name: Dr. Victor Frankenstein
+    traits: unstable, brilliant, delusional
+    playstyle: cautious
+    quotes:
+      - There can be no community between you and me; we are enemies.
+      - How dangerous is the acquirement of knowledge.
+      - The energy of my purpose alone sustained me.
+      - Study that weakens your affections certainly does not befit the human mind.
+
+  - name: Winnie the Pooh
+    traits: good-natured, simple, and wise
+    playstyle: tight and passive
+    quotes:
+      - A hug is always the right size.
+      - I wasn't going to eat it. I was just going to taste it.
+      - What to do? Think, think, think!
+      - Hoo hoo!
+
+  - name: Eeyore
+    traits: pessimistic, gloomy, and melancholy
+    playstyle: loose and passive
+    quotes:
+      - Why bother?
+      - It's not much of a tail, but I guess I'm sort of attached to it.
+      - Not that anymody cares.
+      - Sure is a cheerful color. Guess I’ll have to get used to it.
+
+  - name: Tigger
+    traits: high-energy, optimistic, and egotistical
+    playstyle: loose and aggressive
+    quotes:
+      - The wonderful thing about Tiggers is that I'm the only one!
+      - Fun, fun, fun, fun, fun!
+      - I almost bounced right out of my skin!
+      - Buddy, if you're gonna pounce, you've got to have some bounce!
+
+  - name: Piglet
+    traits: timid, anxious, and soft-spoken
+    playstyle: tight and aggressive
+    quotes:
+      - Ah! Oh, d-d-d-d-dear!
+      - Oh dear. Oh, dearie dear.
+      - I don't remember a thing; I was young and foolish. I blame society!
+      - It is hard to be brave when you're only a very small animal.
+
+  - name: Steamboat Willie
+    traits: mischievous, cheeky, callous
+    playstyle: loose and tricky
+    quotes:
+      - Heh-heh-
+      - Nnngh!
+      - \*Melodic whistling\*
+
+  - name: Pinocchio
+    traits: gullible, curious, impulsive
+    playstyle: bluffy calling station
+    quotes:
+      - How can you possibly know that I have told a lie?
+      - Would you lend me a dime until tomorrow?
+      - Believe me, honored sir, it was not my fault!
+      - Oh, papa! papa! if only you were here!
+
+  - name: Betty Boop
+    traits: flirtatious, happy-go-lucky, street-smart
+    playstyle: tight and tricky
+    quotes:
+      - Boop-Oop-a-Doop!
+      - Oh, you naughty boys!
+      - I’m just a little baby...
+      - Oh I can't go on like this. Give me a kiss, huh?
+
+  - name: Ebenezer Scrooge
+    traits: cold-hearted, miserly, and greedy
+    playstyle: Old Man Coffee – tight, passive, trappy, extremely narrow preflop range
+    quotes:
+      - What right have you to be merry? You’re poor enough.
+      - Now, I’ll tell you what, my friend. I won't stand this any longer.
+      - A slight disorder of the stomach makes cheats of the senses.
+      - Bah! Humbug!
+      - Good Heaven!
