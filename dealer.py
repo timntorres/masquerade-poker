@@ -88,12 +88,12 @@ Respond QUICKLY, with at most ONE word, and NO punctuation!"""
 
         p = self.personality
 
-        return f"""\nThere's ${pot} in the pot.\n\
-You have ${self.chips} in chips.\n\
+        return f"""\n{self.name}? It's your turn to act.\n\n\
 You've been dealt {self.hole_cards}.\n\
-It's your turn to act.\n\
-\nYour name is {self.name}. You are {p.traits}. \
-You are currently playing No-Limit Hold 'Em. Your playstyle is {p.playstyle}. \
+There's ${pot} in the pot.\n\
+You have ${self.chips} in chips.\n\
+\nAs {self.name}, you are {p.traits}. \
+Your No-Limit Hold 'Em playstyle is {p.playstyle}. \
 It's your {self.hand_number}th hand at this table with a strict time limit, so move quickly or be penalized.\n\n\
 Choose from the following responses:
 "{check_or_call}" {call_all_in}
@@ -212,12 +212,6 @@ class TexasHoldEm:
             remaining_players[0].chips += pot
             return game_log, remaining_players, pot, deck, []
 
-        game_log += f"\n"
-        for player in remaining_players:
-            # Flush the street_amount_in
-            player.street_amount_in = 0
-            game_log += f"{player.name} (${player.chips}) remains.\n"
-
         popped_cards = []
         if(cards_to_pop > 0):
             deck, popped_cards = Deck.pop(deck, cards_to_pop)
@@ -227,6 +221,19 @@ class TexasHoldEm:
 
     @staticmethod 
     def request_actions(round_name, big_blind_size, game_log, default_last_to_act, betting_players, pot, community_current=None, community_new=None):
+        # Showing cards when everyone's all in.
+        someones_still_betting = False
+        shown_message = '\n'
+        for player in betting_players:
+            if(not player.all_in):
+                someones_still_betting = True
+                break
+            shown_message += f"{player.name} shows {player.hole_cards}.\n"
+
+        if (not someones_still_betting) and (shown_message not in game_log):
+            game_log += shown_message
+
+
         game_log += f"\n{round_name}:"
 
         bet_occurred_this_street = False
@@ -296,6 +303,7 @@ class TexasHoldEm:
                 game_log += f" ${bet_size}"
                 min_raise = bet_size
                 prev_highest_street_amount_in = bet_size
+                last_to_act = prev_actor
             if action == 'raise':
                 bet_occurred_this_street = True
                 game_log += f" to ${player.street_amount_in}"
@@ -466,7 +474,6 @@ game_log = t.add_players(game_log, players)
 
 game_log = t.start_round(game_log)
 
-# TODO: Go face-up for all ins
 print(game_log)
 
 """
