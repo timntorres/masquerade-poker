@@ -262,7 +262,9 @@ class TexasHoldEm:
             remaining_players[0].chips += pot
             return game_log, remaining_players, pot, deck, []
 
-
+        # Flushing amount_in between streets
+        for player in remaining_players:
+            player.street_amount_in = 0
 
         # Showing cards when everyone's all in.
         someones_still_betting = False
@@ -516,7 +518,7 @@ class TexasHoldEm:
 
 
 if __name__ == "__main__":
-    # seed=1772011049477474
+    # seed=1772015243803030
     init_rand()
 
     personalities = Personality.load_personalities('characters.yaml')
