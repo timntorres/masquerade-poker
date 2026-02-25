@@ -35,19 +35,27 @@ class Player:
         self.name = name
         self.chips = buy_in
         self.hole_cards = []
+        self.position = ""
         self.is_active = True
         self.all_in = False
-        self.position = ""
         self.hand_number = 0
-        self.global_amount_in = 0
+        self.hand_amount_in = 0
         self.street_amount_in = 0
         self.personality = personality
         self.has_personality = (personality is not None)
 
     def __str__(self):
-        return f"{self.position}: {self.name} (${self.chips}) in for ${self.global_amount_in} with {self.hole_cards}"
+        return f"{self.position}: {self.name} (${self.chips}) in for ${self.hand_amount_in} with {self.hole_cards}"
     
     __repr__ = __str__
+
+    def init_round(self):
+        self.is_active = True
+        self.all_in = False
+        self.hand_amount_in = 0
+        self.street_amount_in = 0
+        self.hand_number += 1
+
 
     @staticmethod
     def init_players(personalities, buy_in):
@@ -62,6 +70,7 @@ class Player:
         return players
 
     def build_local_context(self, pot, bet_occurred_this_street, prev_highest_street_amount_in, min_raise):
+        # TODO: When everyone else is all in, and current player is stack leader, prevent that player from raising.
         """
         CASES
         1. bet, check, fold
@@ -99,8 +108,7 @@ class Player:
         """
 
         prev_highest_bet = prev_highest_street_amount_in
-        amount_spent = self.street_amount_in
-        amount_to_call = prev_highest_bet - amount_spent
+        amount_to_call = prev_highest_bet - self.street_amount_in
         """Betting / Checking logic"""
         # Has anyone else bet this street?
         prev_bet_exists = bet_occurred_this_street
@@ -108,9 +116,9 @@ class Player:
         can_afford_min_bet = self.chips > min_raise
         """Raising / Calling logic"""
         # Does the previous bettor have me covered?
-        am_covered = prev_highest_bet >= self.chips - self.street_amount_in
+        am_covered = amount_to_call >= self.chips
         # Can I min raise with chips to spare?
-        can_raise_with_surplus = prev_highest_bet - self.street_amount_in - min_raise < self.chips
+        can_raise_with_surplus = amount_to_call + min_raise < self.chips
 
 
         is_bet_check = (not prev_bet_exists) or (self.street_amount_in == prev_highest_bet)
@@ -162,7 +170,7 @@ Choose from the following responses:
         },
         ])
         print(response.message.content)
-        processed = response.message.content.strip().lower()
+        processed = response.message.content.strip().lower().replace('*', '')
         """
 
         client = Client(
@@ -175,13 +183,14 @@ Choose from the following responses:
             'content': total_context,
         },
         ]
-
+        
         response = ""
-        for part in client.chat('gpt-oss:120b-cloud', messages=messages, stream=True):
+        for part in client.chat('gpt-oss:20b-cloud', messages=messages, stream=True):
             print(part['message']['content'], end='', flush=True)
             response += part['message']['content']
 
-        processed = response.strip().lower()
+        processed = response.strip().lower().replace('*', '') # AI bookend shit in ** sometimes.
+        
 
         # If they didn't follow instructions, split it by \n\n and prune all but the last instance.
         if(len(processed) > 11):
@@ -211,7 +220,7 @@ Choose from the following responses:
         print(f"DEBUGGING: ${self.chips} (self.chips)")
         if(self.chips == 0):
             self.all_in = True
-        self.global_amount_in += final_amount
+        self.hand_amount_in += final_amount
         self.street_amount_in += final_amount
         return action, final_amount
 
@@ -226,7 +235,7 @@ Choose from the following responses:
         if(self.chips == 0):
             self.all_in = True
         self.street_amount_in = final_amount
-        self.global_amount_in = final_amount
+        self.hand_amount_in = final_amount
         return final_amount
         
 """
@@ -236,9 +245,9 @@ Choose from the following responses:
 
 class TexasHoldEm:
 
-    SMALL_BLIND = 2
-    BIG_BLIND = 5
-    MAX_BUY_IN = 500
+    SMALL_BLIND = 1
+    BIG_BLIND = 2
+    MAX_BUY_IN = 30
 
     POSITIONS_PER_PLAYERCOUNT = \
         {
@@ -267,14 +276,13 @@ class TexasHoldEm:
             player.street_amount_in = 0
 
         # Showing cards when everyone's all in.
-        someones_still_betting = False
+        amount_still_betting = 0
         shown_message = '\n'
         for player in remaining_players:
-            if(not player.all_in):
-                someones_still_betting = True
-                break
             shown_message += f"{player.name} shows {player.hole_cards}.\n"
-        if (not someones_still_betting) and (shown_message not in game_log):
+            if(not player.all_in):
+                amount_still_betting += 1
+        if (amount_still_betting <= 1) and (shown_message not in game_log):
             game_log += shown_message
 
         # Next street's cards.
@@ -300,6 +308,15 @@ class TexasHoldEm:
             game_log += f" {community_new}"
         game_log += "\n\n"
 
+        # Try to skip action.
+        players_in = 0
+        for player in betting_players:
+            if (not player.all_in):
+                players_in += 1
+        if(players_in <= 1):
+            # TODO: Disambiguate betting players from showdown players.
+            return game_log, betting_players, pot
+
         # Bet, call, or fold.
         # First to act is to the left of big blind.
         action_ends = False
@@ -309,7 +326,8 @@ class TexasHoldEm:
 
         i = (default_lta_index + 1)%len(betting_players)
         last_to_act = default_last_to_act
-        inactive = set()
+        folded = set()
+        playerset = set(betting_players)
         prev_actor = last_to_act
 
         prev_highest_street_amount_in = big_blind_size
@@ -321,7 +339,7 @@ class TexasHoldEm:
 
             player = betting_players[i]
 
-            if player in inactive:
+            if player in folded:
                 i += 1
                 i %= len(betting_players)
                 continue
@@ -331,19 +349,18 @@ class TexasHoldEm:
                 i %= len(betting_players)
                 all_in_players.add(player)
                 # In case everyone's all in.
-                if (player == last_to_act) and all_in_players == set(betting_players):
+                if (player == last_to_act):
 
                     didnt_fold = []
 
                     for player in betting_players:
-                        if player in inactive:
+                        if player in folded:
                             continue
                         didnt_fold.append(player)
 
                     return game_log, didnt_fold, pot
 
                 continue
-
 
             action, bet_size = player.act(pot, game_log, prev_highest_street_amount_in, bet_occurred_this_street, min_raise)
 
@@ -367,14 +384,16 @@ class TexasHoldEm:
 
             if player.all_in:
                 game_log += f" and is all-in"
+
             game_log += ".\n"
 
+
             if action == "fold":
-                inactive.add(player)
+                folded.add(player)
             else:
                 prev_actor = player
 
-            everyone_folded = (len(inactive) == len(betting_players) - 1)
+            everyone_folded = (len(folded) == len(betting_players) - 1)
             
             did_bet = (action == "raise") or (action == "bet")
             pot_is_right = (player == last_to_act and (not did_bet))
@@ -388,7 +407,7 @@ class TexasHoldEm:
         didnt_fold = []
 
         for player in betting_players:
-            if player in inactive:
+            if player in folded:
                 continue
             didnt_fold.append(player)
             
@@ -399,7 +418,7 @@ class TexasHoldEm:
         self.highest_bet = 0
         self.deck = []
         self.players = []
-        self.player_index_of_button = 0
+        self.player_index_of_button = -1
         self.game_log = ''
 
     def add_players(self, game_log, options):
@@ -416,13 +435,23 @@ class TexasHoldEm:
         self.players.append(new_player)
         self.game_log += f"{name} buys in for ${buy_in}.\n"
     
-    def start_round(self, game_log=""):
+    def start_round(self, game_log="", round_number=0):
+        self.pot = 0
+        self.player_index_of_button += 1
+        self.player_index_of_button %= len(self.players)
+        for player in self.players:
+            player.init_round()
+
+        if(len(self.players) <= 1): 
+            print(f"{len(self.players)} player(s) isn't enough to play poker.")
+            return game_log
+
         self.game_log = game_log
     
         self.deck = shuffle(Deck.generate_deck())
 
         # Print metadata
-        self.game_log += "\nNew round started.\n\n"
+        self.game_log += f"\nStarting hand #{round_number}.\n\n"
         # Set positions.
         position_names = TexasHoldEm.POSITIONS_PER_PLAYERCOUNT[len(self.players)]
         # Post blinds.
@@ -430,7 +459,7 @@ class TexasHoldEm:
         bb = 0
         sb_name = ''
         bb_name = ''
-        bb_index = -1
+        bb_index = self.player_index_of_button - 1
         for index, player in enumerate(self.players):
             player.position = position_names[index - self.player_index_of_button]
             if (player.position == "SB") or (len(self.players) == 2 and player.position == "BTN"):
@@ -450,7 +479,7 @@ class TexasHoldEm:
         # Distribute hole cards.
         for index, player in enumerate(self.players):
             self.deck, player.hole_cards = Deck.pop(self.deck, 2)
-            self.game_log += f"Dealt two cards to {player.name} in {player.position} (${player.chips}).\n"
+            self.game_log += f"Dealt two cards to {player.position}, {player.name} (${player.chips}).\n"
 
         remaining_players = []
 
@@ -511,23 +540,49 @@ class TexasHoldEm:
         if(len(winners) > 1):
             s = 's'
         self.game_log += f"Winner{s}: "
+        portion = self.pot/len(winners)
+        winner_set = set([winner.player.name for winner in winners])
         for winner in winners:
             self.game_log += winner.player.name
-            self.game_log += f" showed {winner.player.hole_cards} ({winner.hand_id})\n"
+            self.game_log += f" showed {winner.player.hole_cards} ({winner.hand_id}) and collects ${portion}.\n"
+
+        self.game_log += "\n"
+
+
+        pruned_players = []
+        for player in self.players:
+            # Limitation: requires players' names to be unique.
+            if(player.name in winner_set):
+                player.chips += portion
+            # Kick out players with 0 chips.
+            if(player.chips == 0):
+                self.game_log += f"{player.name} leaves the table.\n"
+                continue
+            pruned_players.append(player)
+        self.players = pruned_players
+
+        
         return self.game_log
 
 
 if __name__ == "__main__":
-    # seed=1772015243803030
     init_rand()
+    # seed=1772015243803030
+    
 
     personalities = Personality.load_personalities('characters.yaml')
     players = Player.init_players(personalities, TexasHoldEm.MAX_BUY_IN)
 
     t = TexasHoldEm()
     game_log = ""
+
     game_log = t.add_players(game_log, players)
 
-    game_log = t.start_round(game_log)
+    i = 0
+    game_log = ''
+    while len(t.players) > 1:
+        game_log = init_rand()
+        game_log += t.start_round(game_log, i)
+        i += 1
 
-    print(game_log)
+    game_log += f"\n\n{t.players[0].name} won."

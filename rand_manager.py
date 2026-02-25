@@ -8,6 +8,7 @@ def init_rand(seed=None, silent=False):
     if(not silent):
         print(f"Shuffling with seed {seed}")
     random.seed(seed)
+    return f"\n(Shuffling with seed {seed})\n"
 
 def shuffle(l):
     random.shuffle(l)
