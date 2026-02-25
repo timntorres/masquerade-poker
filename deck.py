@@ -161,11 +161,17 @@ class Hand:
         if (len(cards) < 5):
             return 0 if Hand.is_straight(cards) else -1
 
-        ordered = Hand.make_consecutive(cards)
+        # Remove duplicates
+        uniqued = []
+        seen = set()
+        for card in cards:
+            if(card.rank not in seen):
+                uniqued.append(card)
+                seen.add(card.rank)
 
         index_of_highest_straight = -1
-        for i in range(len(cards) - 4):
-            if(Hand.is_straight(cards[i:5+i])):
+        for i in range(len(uniqued) - 4):
+            if(Hand.is_straight(uniqued[i:5+i])):
                 index_of_highest_straight = i
         return index_of_highest_straight
 
@@ -429,7 +435,7 @@ class Hand:
 
         # Detect any straight
         pruned = ordered
-        straight_index = Hand.get_highest_straight_index(cards)
+        straight_index = Hand.get_highest_straight_index(pruned)
         has_straight = False
         if(straight_index != -1):
             pruned = cards[straight_index:straight_index + 5]

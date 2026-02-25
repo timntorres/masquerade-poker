@@ -62,29 +62,76 @@ class Player:
         return players
 
     def build_local_context(self, pot, bet_occurred_this_street, prev_highest_street_amount_in, min_raise):
+        """
+        CASES
+        1. bet, check, fold
+            Has anyone else bet this street?
+                No
+            Can I afford to bet more than a big blind? (self.chips > min_raise)
+                Yes
+        2. bet (all in), check, fold
+            Has anyone else bet this street?
+                No
+            Can I afford to bet more than a big blind? (self.chips > min_raise)
+                No
+            
+        3. call (all in), fold
+            Has anyone else bet this street?
+                Yes
+            Does the previous bettor have me covered?
+                Yes
 
-        is_check = (not bet_occurred_this_street) or (self.street_amount_in == prev_highest_street_amount_in)
-        is_bet = (not bet_occurred_this_street)
+        4. raise (all in), call, fold
+            Has anyone else bet this street?
+                Yes
+            Does the previous bettor have me covered?
+                No
+            Can I min raise with chips to spare?
+                No
 
-        bet_or_raise = "raise"
-        if(is_bet):
-            bet_or_raise = "bet"
+        5. raise, call, fold
+            Has anyone else bet this street? 
+                Yes
+            Does the previous bettor have me covered?
+                No
+            Can I min raise with chips to spare?
+                Yes
+        """
 
-        call_all_in = ""
-        check_or_call = "call"
-        if(is_check):
-            check_or_call = "check"
+        prev_highest_bet = prev_highest_street_amount_in
+        amount_spent = self.street_amount_in
+        amount_to_call = prev_highest_bet - amount_spent
+        """Betting / Checking logic"""
+        # Has anyone else bet this street?
+        prev_bet_exists = bet_occurred_this_street
+        # Can I afford to bet more than the minimum bet?
+        can_afford_min_bet = self.chips > min_raise
+        """Raising / Calling logic"""
+        # Does the previous bettor have me covered?
+        am_covered = prev_highest_bet >= self.chips - self.street_amount_in
+        # Can I min raise with chips to spare?
+        can_raise_with_surplus = prev_highest_bet - self.street_amount_in - min_raise < self.chips
 
-        raise_is_an_option = prev_highest_street_amount_in - self.street_amount_in < self.chips
 
-        ending = f""""{bet_or_raise} N"
-Such that N is a number between {min_raise} and {self.chips}.\n
-Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!""" if min_raise < self.chips else f"""\"raise {self.chips}" (all in).\n
-Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!"""
-        if(not raise_is_an_option):
-            call_all_in = " (all in)"
-            ending = """\n
-Respond QUICKLY, with at most ONE word, and NO punctuation!"""
+        is_bet_check = (not prev_bet_exists) or (self.street_amount_in == prev_highest_bet)
+        is_raise_call = prev_bet_exists and (self.street_amount_in != prev_highest_bet)
+
+        only_all_in_bet = (not prev_bet_exists) and (not can_afford_min_bet)
+        only_all_in_call = prev_bet_exists and am_covered
+        only_all_in_raise = prev_bet_exists and (not can_raise_with_surplus)
+
+        bet_or_raise = "bet" if is_bet_check else "raise"
+        check_or_call = "check" if is_bet_check else "call"
+
+        bet_all_in = "(all in)" if only_all_in_bet else ""
+        call_all_in = "(all in)" if only_all_in_call else ""
+        raise_all_in = "(all in)" if only_all_in_raise else ""
+
+        bet_or_raise_all_in = bet_all_in or raise_all_in
+
+        bet_or_raise_option = "" if call_all_in else f'''"{bet_or_raise} N" {bet_or_raise_all_in}\n\
+Such that N is a number between {min_raise} and {self.chips}.\n'''
+        ending = """Respond QUICKLY, with at most ONE word, and NO punctuation!"""
 
         p = self.personality
 
@@ -98,8 +145,8 @@ It's your {self.hand_number}th hand at this table with a strict time limit, so m
 Choose from the following responses:
 "{check_or_call}" {call_all_in}
 "fold"
-{ending}
-"""
+{bet_or_raise_option}"""
+
     def act(self, pot, community_context, prev_highest_street_amount_in, bet_occurred_this_street, min_raise):
 
         total_context = community_context + self.build_local_context(pot, bet_occurred_this_street, prev_highest_street_amount_in, min_raise)
@@ -150,6 +197,8 @@ Choose from the following responses:
             self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_street_amount_in + raise_amount - self.street_amount_in)
         elif ("call" in processed):
             action = "call"
+            # Keep this in for now, for when call unexpectedly fails to yield an all-in...
+            print(f"DEBUGGING: attempt_bet({self.chips}, {prev_highest_street_amount_in} - {self.street_amount_in})")
             self.chips, final_amount = Player.attempt_bet(self.chips, prev_highest_street_amount_in - self.street_amount_in)
         elif ("check" in processed):
             action = "check"
@@ -158,7 +207,8 @@ Choose from the following responses:
             action = "fold"
             self.is_active = False
             final_amount = 0
-
+        # Keep this in for now, for when call unexpectedly fails to yield an all-in...
+        print(f"DEBUGGING: ${self.chips} (self.chips)")
         if(self.chips == 0):
             self.all_in = True
         self.global_amount_in += final_amount
@@ -467,6 +517,7 @@ class TexasHoldEm:
 
 
 if __name__ == "__main__":
+    # seed=1772011049477474
     init_rand()
 
     personalities = Personality.load_personalities('characters.yaml')
