@@ -70,7 +70,6 @@ class Player:
         return players
 
     def build_local_context(self, pot, bet_occurred_this_street, prev_highest_street_amount_in, min_raise):
-        # TODO: When everyone else is all in, and current player is stack leader, prevent that player from raising.
         """
         CASES
         1. bet, check, fold
@@ -362,6 +361,18 @@ class TexasHoldEm:
 
                 continue
 
+            # If everyone else has EITHER folded OR is all-in, then I have no more actions.
+            other_players = set.difference(playerset, set([player]))
+            folded_count = 0
+            allin_count = 0
+            for other in other_players:
+                if other.all_in:
+                    allin_count += 1
+                elif other in folded:
+                    folded_count += 1
+            if(folded_count + allin_count == len(other_players)):
+                return game_log, [player for player in betting_players if player not in folded], pot
+
             action, bet_size = player.act(pot, game_log, prev_highest_street_amount_in, bet_occurred_this_street, min_raise)
 
             pot += bet_size
@@ -571,6 +582,7 @@ if __name__ == "__main__":
     
 
     personalities = Personality.load_personalities('characters.yaml')
+    # TODO: Add players by name
     players = Player.init_players(personalities, TexasHoldEm.MAX_BUY_IN)
 
     t = TexasHoldEm()
@@ -583,6 +595,9 @@ if __name__ == "__main__":
     while len(t.players) > 1:
         game_log = init_rand()
         game_log += t.start_round(game_log, i)
+        if(len(t.players) == 1):
+            game_log += f"\n\n{t.players[0].name} won."
+        print(game_log)
         i += 1
 
-    game_log += f"\n\n{t.players[0].name} won."
+    
