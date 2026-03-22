@@ -1,5 +1,6 @@
 from deck import Deck, Hand
 from ollama import chat, Client
+import anthropic
 from rand_manager import shuffle, init_rand
 import os
 import yaml
@@ -152,7 +153,8 @@ It's your {self.hand_number}th hand at this table with a strict time limit, so m
 Choose from the following responses:
 "{check_or_call}" {call_all_in}
 "fold"
-{bet_or_raise_option}"""
+{bet_or_raise_option}
+{ending}"""
 
     def act(self, pot, community_context, prev_highest_street_amount_in, bet_occurred_this_street, min_raise):
 
@@ -160,36 +162,23 @@ Choose from the following responses:
 
         print(f"\n\n\n{total_context}\n\n\n")
 
-        # glm-4.7-flash for local, but slow
-        """
-        response = chat(model='glm-4.7-flash', messages=[
-        {
-            'role': 'user',
-            'content': total_context,
-        },
-        ])
-        print(response.message.content)
-        processed = response.message.content.strip().lower().replace('*', '')
-        """
-
-        client = Client(
-            host="https://ollama.com",
-            headers={'Authorization': 'Bearer ' + os.environ.get('OLLAMA_API_KEY')}
+        client = anthropic.Anthropic()
+        message = client.messages.create(
+            # claude-opus-4-6 -> ~$0.10/min
+            model="claude-haiku-4-5",
+            max_tokens=1000,
+            messages=[
+                {
+                    "role": "user",
+                    "content": total_context,
+                }
+            ],
         )
-        messages = [
-        {
-            'role': 'user',
-            'content': total_context,
-        },
-        ]
-        
-        response = ""
-        for part in client.chat('gpt-oss:20b-cloud', messages=messages, stream=True):
-            print(part['message']['content'], end='', flush=True)
-            response += part['message']['content']
+        response = message.content[0].text
 
-        processed = response.strip().lower().replace('*', '') # AI bookend shit in ** sometimes.
-        
+        print(f"\n\n\nRESPONSE: {response}\n\n\n")
+        processed = response.strip().lower().replace('*', '').replace('"', '') # AI bookend shit in ** sometimes.
+
 
         # If they didn't follow instructions, split it by \n\n and prune all but the last instance.
         if(len(processed) > 11):
