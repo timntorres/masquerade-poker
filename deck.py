@@ -2,13 +2,11 @@ import heapq
 import math
 import time
 import copy
+
 class Deck:
     
     RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"]
     SUITS = ["c", "d", 'h', "s"]
-
-    def __init__(self):
-        self.cards = Deck.generate_deck()
 
     @staticmethod
     def generate_deck():
@@ -30,7 +28,6 @@ class SameRank:
         self.amount = amount
         self.rank = rank
         self.constituents = constituents
-
 
 class Card:
 
@@ -54,6 +51,7 @@ class Card:
             return NotImplemented
         return self.value < other.value
 
+    @staticmethod
     def min(cards):
         min = math.inf
         index_of_max = -1

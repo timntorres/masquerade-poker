@@ -2,13 +2,18 @@ import random
 import math
 import time
 
-def init_rand(seed=None, silent=False):
+from game_structs import Phases, Actions
+
+def init_rand(round, seed=None):
+
     if(seed == None):
         seed = math.floor(time.time()*1000000)
-    if(not silent):
-        print(f"Shuffling with seed {seed}")
+
     random.seed(seed)
-    return f"\n(Shuffling with seed {seed})\n"
+
+    round.log_action(phase=Phases.GAME_START, subject="Dealer", action=Actions.SHUFFLE, object=seed)
+
+    return round
 
 def shuffle(l):
     random.shuffle(l)

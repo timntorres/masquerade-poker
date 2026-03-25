@@ -1,4 +1,6 @@
 from deck import Deck, Hand
+from action_manager import Round, Actions, Phases
+
 from ollama import chat, Client
 import anthropic
 from rand_manager import shuffle, init_rand
@@ -47,7 +49,7 @@ class Player:
 
     def __str__(self):
         return f"{self.position}: {self.name} (${self.chips}) in for ${self.hand_amount_in} with {self.hole_cards}"
-    
+
     __repr__ = __str__
 
     def init_round(self):
@@ -421,12 +423,13 @@ class TexasHoldEm:
         self.player_index_of_button = -1
         self.game_log = ''
 
-    def add_players(self, game_log, options):
+    @staticmethod
+    def add_players(round, options):
         options = shuffle(options)
         for i in range(6):
-            self.players.append(players[i])
-            self.game_log += f"{players[i].name} buys in for ${players[i].chips}.\n"
-        return game_log
+            round.players.append(players[i])
+            round.game_log += f"{players[i].name} buys in for ${players[i].chips}.\n"
+        return round
 
     def add_player(self, name, buy_in):
         if len(self.players) >= 6:
@@ -435,44 +438,16 @@ class TexasHoldEm:
         self.players.append(new_player)
         self.game_log += f"{name} buys in for ${buy_in}.\n"
     
-    def start_round(self, game_log="", round_number=0):
-        self.pot = 0
-        self.player_index_of_button += 1
-        self.player_index_of_button %= len(self.players)
-        for player in self.players:
-            player.init_round()
-
-        if(len(self.players) <= 1): 
-            print(f"{len(self.players)} player(s) isn't enough to play poker.")
-            return game_log
-
-        self.game_log = game_log
-    
-        self.deck = shuffle(Deck.generate_deck())
+    @staticmethod
+    def run(round):
 
         # Print metadata
         self.game_log += f"\nStarting hand #{round_number}.\n\n"
-        # Set positions.
-        position_names = TexasHoldEm.POSITIONS_PER_PLAYERCOUNT[len(self.players)]
-        # Post blinds.
-        sb = 0
-        bb = 0
-        sb_name = ''
-        bb_name = ''
-        bb_index = self.player_index_of_button - 1
-        for index, player in enumerate(self.players):
-            player.position = position_names[index - self.player_index_of_button]
-            if (player.position == "SB") or (len(self.players) == 2 and player.position == "BTN"):
-                sb = player.post_blind(TexasHoldEm.SMALL_BLIND)
-                sb_name = player.name
-            elif (player.position == "BB"):
-                bb = player.post_blind(TexasHoldEm.BIG_BLIND)
-                bb_name = player.name
-                bb_index = index
-            else:
-                player.street_amount_in = 0
-        self.game_log += f"{sb_name} posts small blind (${sb}).\n"
-        self.game_log += f"{bb_name} posts big blind (${bb}).\n\n"
+
+        # TODO: Move all this state to Round. 
+        round.initialize_pot()
+        round.assign_positions()
+        
         # Add chips here
         self.pot += sb
         self.pot += bb
@@ -566,27 +541,28 @@ class TexasHoldEm:
 
 
 if __name__ == "__main__":
-    init_rand()
-    # seed=1772015243803030
-    
-
     personalities = Personality.load_personalities('characters.yaml')
-    # TODO: Add players by name
-    players = Player.init_players(personalities, TexasHoldEm.MAX_BUY_IN)
+
+    player_pool = Player.init_players(personalities, TexasHoldEm.MAX_BUY_IN)
 
     t = TexasHoldEm()
-    game_log = ""
 
-    game_log = t.add_players(game_log, players)
+    rounds = {}
+
+    round = Round(0)
+
+    round = TexasHoldEm.add_players(round, player_pool)
 
     i = 0
-    game_log = ''
-    while len(t.players) > 1:
-        game_log = init_rand()
-        game_log += t.start_round(game_log, i)
-        if(len(t.players) == 1):
-            game_log += f"\n\n{t.players[0].name} won."
-        print(game_log)
+    current_round = round
+    while not current_round.last:
+        current_round = init_rand(current_round)
+
+        current_round = TexasHoldEm.run(current_round, i)
+
+        if(current_round.last):
+            round.log_action(phase=Phases.GAME_END, subject=t.players[0], action=Actions.WIN)
+        
         i += 1
 
     
