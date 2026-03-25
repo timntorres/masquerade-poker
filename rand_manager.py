@@ -2,7 +2,7 @@ import random
 import math
 import time
 
-from game_structs import Phases, Actions
+from constants import Phases, Actions
 
 def init_rand(round, seed=None):
 

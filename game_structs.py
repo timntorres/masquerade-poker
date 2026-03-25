@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Dict, ClassVar
+from typing import List, Dict, Set, Optional, ClassVar
 from dataclasses import dataclass, field
 
 from constants import Positions as p_
@@ -26,11 +26,14 @@ class Player:
     has_folded: bool
     is_all_in: bool
 
+    def __repr__(self):
+        return self.name
+
 @dataclass(frozen=True)
 class Pot:
-    players: List[Player]
+    player_ids: Set[int]
     amount: float
-    parent_pot: 'Pot'
+    parent_pot: Optional['Pot'] = field(default=None)
 
 @dataclass(frozen=True)
 class Action:

@@ -1,6 +1,10 @@
 import yaml
-from game_structs import Personality, Player, HoldemRound
+from datetime import datetime
+
+from game_structs import Personality, Player, HoldemRound, Pot
 from constants import Positions
+
+from rand_manager import shuffle
 
 def load_personalities(filename: str):
     with open(filename, 'r') as file:
@@ -39,9 +43,35 @@ def init_players(personalities: list[Personality]) -> list[Player]:
             players.append(p)
         return players
 
+def select_players(options: str, count=6) -> dict[int, Player]:
+    shuffle(options)
 
+    selected_players = {}
 
+    for i in range(count):
+          player = options[i]
+          id = player.player_id
+          selected_players[id] = player
+
+    return selected_players
 
 if __name__ == "__main__":
     personalities = load_personalities('characters.yaml')
     player_pool = init_players(personalities)
+    player_dict = select_players(player_pool)
+
+    empty_pot = Pot(
+            set(player_dict.keys()),
+            0,
+            None
+         ),
+
+    round = HoldemRound(
+         0,
+         datetime.now(),
+         empty_pot,
+         [],
+         player_dict
+    )
+
+    print(player_dict)
