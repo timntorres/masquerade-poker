@@ -3,6 +3,7 @@ from typing import List, Dict, Set, Optional, ClassVar
 from dataclasses import dataclass, field
 
 from constants import Positions as p_
+from constants import Actions
 
 @dataclass(frozen=True)
 class Personality:
@@ -43,6 +44,17 @@ class Action:
     action: str
     object: str
     time: datetime
+
+    def __str__(self):
+
+        preposition = Actions.PREP_PHRASES[self.action]
+        preposition = " " + preposition if preposition != "" else ""
+        object =  " " + self.object if self.object != "" else ""
+
+        return f"{self.subject} {self.action}s{preposition}{object}."
+
+    __repr__ = __str__
+
 
 @dataclass(frozen=True)
 class HoldemRound:

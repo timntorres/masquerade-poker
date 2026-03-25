@@ -2,6 +2,7 @@ import yaml
 from datetime import datetime
 
 from game_structs import Personality, Player, HoldemRound, Pot
+from game_logic import play_round
 from constants import Positions
 
 from rand_manager import shuffle
@@ -74,4 +75,5 @@ if __name__ == "__main__":
          player_dict
     )
 
-    print(player_dict)
+    round = play_round(round)
+    
