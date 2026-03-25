@@ -2,6 +2,8 @@ import datetime
 from typing import List, Dict, ClassVar
 from dataclasses import dataclass, field
 
+from constants import Positions as p_
+
 @dataclass(frozen=True)
 class Personality:
     id: int
@@ -56,9 +58,9 @@ class HoldemRound:
 
     POSITIONS_PER_PLAYERCOUNT: \
         ClassVar[Dict[int, List[str]]] = {
-            2: ["BTN", "BB"],
-            3: ["BTN", "SB", "BB"],
-            4: ["BTN", "SB", "BB", "CO"],
-            5: ["BTN", "SB", "BB", "HJ", "CO"],
-            6: ["BTN", "SB", "BB", "UTG", "HJ", "CO"]
+            2: [p_.BTN, p_.BB],
+            3: [p_.BTN, p_.SB, p_.BB],
+            4: [p_.BTN, p_.SB, p_.BB, p_.CO],
+            5: [p_.BTN, p_.SB, p_.BB, p_.HJ, p_.CO],
+            6: [p_.BTN, p_.SB, p_.BB, p_.UTG, p_.HJ, p_.CO]
         }

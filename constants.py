@@ -1,6 +1,18 @@
 from dataclasses import dataclass, field
 from typing import Dict, ClassVar
 
+from enum import Enum
+
+class Positions (str, Enum):
+    BTN = "BTN"
+    SB = "SB"
+    BB = "BB"
+    UTG = "UTG"
+    HJ = "HJ"
+    CO = "CO"
+
+    NONE = ""
+
 @dataclass(frozen=True)
 class Phases:
     GAME_START: ClassVar[str] = "game start"
