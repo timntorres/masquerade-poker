@@ -1,5 +1,6 @@
 
-from game_structs import HoldemRound, Action, Player
+from game_structs import HoldemRound, Action, Player, Pot
+from constants import Phases, Actions, Positions
 from deck import Deck
 from utils import init_rand, shuffle, get_time
 
@@ -8,7 +9,6 @@ import random
 import math
 import time
 
-from constants import Phases, Actions, Positions
 
 def generate_log_string(round: HoldemRound) -> str:
     log_string = ""
@@ -44,14 +44,16 @@ def log_action(round: HoldemRound, phase: str, subject: str, action: str, object
     new_action = Action(phase, subject, subject_id, action, object, get_time())
     action_list.append(new_action)
 
+    print(f"ACTION PREVIEW. {new_action}")
+
     return HoldemRound(
+        round.btn_id,
         round.round_id,
-        get_time(),
+        round.time,
         round.pot,
         action_list, #
         round.players,
         round.seats,
-        round.btn_index
     )
 
 def init_rand(round, seed=None):
@@ -80,7 +82,8 @@ def init_players(round: HoldemRound) -> HoldemRound:
             player.chips, 
             0, 
             False, 
-            False
+            False,
+            player.next_id_to_act
         )
         updated_players[player.player_id] = updated_player
         # Populate updated player in same seat.
@@ -88,24 +91,36 @@ def init_players(round: HoldemRound) -> HoldemRound:
         updated_seats[seat_index] = updated_player.player_id
     
     return HoldemRound( \
-        round.round_id, get_time(), 
+        round.btn_id, round.round_id, round.time, 
         round.pot, round.actions, 
-        updated_players, updated_seats, 
-        round.btn_index
+        updated_players, updated_seats
+        
     )
     
 def set_positions(round: HoldemRound) -> HoldemRound:
     # Set positions.
     position_names = HoldemRound.POSITIONS_PER_PLAYERCOUNT[len(round.players)]
-    bb_index = round.btn_index - 1
 
     updated_players = {}
 
-    for seat_index, player_id in enumerate(round.seats):
-        player = round.players[player_id]
+    players_in_seat_order = []
 
-        new_position = position_names[seat_index - round.btn_index]
-        updated_players[player_id] = Player(
+    for player_id in round.seats:
+        # Seats can be empty.
+        if(player_id == -1):
+            continue
+        players_in_seat_order.append(round.players[player_id])
+    
+    btn_index = players_in_seat_order.index(round.players[round.btn_id])
+
+    btn_index_offset = btn_index - len(players_in_seat_order)
+
+
+    for i in range(btn_index_offset, btn_index_offset + len(players_in_seat_order)):
+        player = players_in_seat_order[i]
+        new_position = position_names[i]
+
+        updated_players[player.player_id] = Player(
             player.player_id,
             player.name,
             new_position, #
@@ -115,25 +130,25 @@ def set_positions(round: HoldemRound) -> HoldemRound:
             player.amount_in,
             player.has_folded,
             player.is_all_in,
+            players_in_seat_order[(i + 1)%len(players_in_seat_order)].player_id
         )
-
         round = log_action(
             round, 
             Phases.GAME_START, 
             player.name, 
             Actions.IS, 
-            new_position, 
+            new_position,
             player.player_id
         )
 
     round = HoldemRound(
+        round.btn_id,
         round.round_id,
         get_time(),
         round.pot,
         round.actions,
         updated_players, #
-        round.seats,
-        round.btn_index
+        round.seats
     )
 
     return round
@@ -151,13 +166,28 @@ def update_player(round: HoldemRound, player_to_update: Player) -> HoldemRound:
         updated_players[id] = player_to_update
 
     return HoldemRound(
+        round.btn_id,
         round.round_id,
         round.time,
         round.pot,
         round.actions,
         updated_players, #
-        round.seats,
-        round.btn_index
+        round.seats
+    )
+
+def update_pot(round: HoldemRound, updated_amount: float) -> HoldemRound:
+    return HoldemRound(
+        round.btn_id,
+        round.round_id,
+        round.time,
+        Pot(
+            round.pot.player_ids,
+            updated_amount, #
+            round.pot.parent_pot
+        ),
+        round.actions,
+        round.players,
+        round.seats
     )
 
 def attempt_bet(round: HoldemRound, player: Player, attempted_amount: int, action: str) -> HoldemRound:
@@ -175,10 +205,12 @@ def attempt_bet(round: HoldemRound, player: Player, attempted_amount: int, actio
         updated_chips, #
         updated_amount_in, #
         player.has_folded,
-        updated_is_all_in
+        updated_is_all_in,
+        player.next_id_to_act
     )
 
     round = update_player(round, new_player)
+    round = update_pot(round, actual_bet)
 
     object = f"${updated_amount_in}"
     if(action == Actions.POST):
@@ -189,10 +221,13 @@ def attempt_bet(round: HoldemRound, player: Player, attempted_amount: int, actio
     return round
 
 def post_blinds(round: HoldemRound) -> HoldemRound:
+
+
     # Post blinds.
     sb = HoldemRound.SMALL_BLIND
     bb = HoldemRound.BIG_BLIND
     
+
     sb_id = -1
     bb_id = -1
     for player in round.players.values():
@@ -204,9 +239,69 @@ def post_blinds(round: HoldemRound) -> HoldemRound:
     round = attempt_bet(round, round.players[sb_id], sb, Actions.POST)
     round = attempt_bet(round, round.players[bb_id], bb, Actions.POST)
 
+
     return round
 
+def deal_hole_cards(deck: Deck, round: HoldemRound) -> tuple[Deck, HoldemRound]:
+    updated_players = {}
+
+    current_id = round.players[round.btn_id].next_id_to_act
+
+    ids_seen = set()
+
+    while(current_id not in ids_seen):
+        current_player = round.players[current_id]
+        deck, hole_cards = Deck.pop(deck, 2)
+
+        updated_players[current_player.player_id] = Player(
+            current_player.player_id,
+            current_player.name,
+            current_player.position,
+            current_player.personality,
+            hole_cards, #
+            current_player.chips,
+            current_player.amount_in,
+            current_player.has_folded,
+            current_player.is_all_in,
+            current_player.next_id_to_act
+        )
+        log_action(round, Phases.GAME_START, current_player.name, Actions.DEALT, str(hole_cards), current_player.player_id)
+
+        ids_seen.add(current_id)
+        current_id = current_player.next_id_to_act
+
+
+
+    for player in round.players.values():
+
+        deck, hole_cards = Deck.pop(deck, 2)
+        updated_players[player.player_id] = Player(
+            player.player_id,
+            player.name,
+            player.position,
+            player.personality,
+            hole_cards,
+            player.chips,
+            player.amount_in,
+            player.has_folded,
+            player.is_all_in,
+            player.next_id_to_act
+        )
     
+    round = HoldemRound(
+        round.btn_id,
+        round.round_id,
+        round.time,
+        round.pot,
+        round.actions,
+        updated_players,
+        round.seats
+    )
+
+
+
+    return deck, round
+
 def play_round(round: HoldemRound) -> HoldemRound:
     # Shuffle deck.
     round = init_rand(round)
@@ -215,6 +310,8 @@ def play_round(round: HoldemRound) -> HoldemRound:
     deck = shuffle(Deck.generate_deck())
     round = set_positions(round)
     round = post_blinds(round)
+
+    deck, round = deal_hole_cards(deck, round)
 
     log_string = generate_log_string(round)
     print(log_string)

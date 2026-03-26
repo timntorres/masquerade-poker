@@ -37,6 +37,9 @@ class Actions:
     POST: ClassVar[str] = 'post'
     IS: ClassVar[str] = 'is'
     BUY: ClassVar[str] = 'buy'
+    DEALT: ClassVar[str] = 'is dealt'
+
+    DOESNT_ADD_S: ClassVar[set] = set([DEALT])
 
     PREP_PHRASES: ClassVar[Dict[str, str]] = {
         SHUFFLE: 'with',
@@ -50,5 +53,6 @@ class Actions:
         WIN: '',
         POST: '',
         IS: '',
-        BUY: 'in for'
+        BUY: 'in for',
+        DEALT: ''
     }

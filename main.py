@@ -39,7 +39,8 @@ def init_players(personalities: list[Personality]) -> list[Player]:
                 HoldemRound.MAX_BUY_IN,
                 0,
                 False,
-                False
+                False,
+                -1
             )
             players.append(p)
         return players
@@ -59,6 +60,7 @@ def select_players(options: str, count=6) -> dict[int, Player]:
 def populate_seats(round: HoldemRound) -> HoldemRound:
     seats = list(round.players.keys())
     return HoldemRound(
+        round.btn_id,
         round.round_id,
         get_time(),
         round.pot,
@@ -77,14 +79,16 @@ if __name__ == "__main__":
             set(player_dict.keys()),
             0,
             None
-         ),
+         )
 
     round = HoldemRound(
-         0,
-         datetime.now(),
+         list(player_dict.keys())[0],
+         "0",
+         get_time(),
          empty_pot,
          [],
-         player_dict
+         player_dict,
+         []
     )
 
     round = populate_seats(round)

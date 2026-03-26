@@ -22,10 +22,12 @@ class Player:
 
     hole_cards: List[str]
     chips: float
-    amount_in: float = 0
+    amount_in: float
 
-    has_folded: bool = False
-    is_all_in: bool = False
+    has_folded: bool
+    is_all_in: bool
+
+    next_id_to_act: int
 
     def __repr__(self):
         return self.name
@@ -51,7 +53,9 @@ class Action:
         preposition = " " + preposition if preposition != "" else ""
         object =  " " + self.object if self.object != "" else ""
 
-        formatted = f"[{self.time}] {self.subject} {self.action}s{preposition}{object}."
+        s = '' if self.action in Actions.DOESNT_ADD_S else 's'
+
+        formatted = f"[{self.time}] {self.subject} {self.action}{s}{preposition}{object}."
 
         if(self.action == Actions.IS):
             formatted = f"[{self.time}]{object} – {self.subject}."
@@ -68,15 +72,14 @@ class HoldemRound:
     BIG_BLIND: ClassVar[int] = 2
     MIN_BUY_IN: ClassVar[int] = 80
     MAX_BUY_IN: ClassVar[int] = 200
-
+    btn_id: int
     round_id: str
     time: datetime
     pot: Pot
     actions: List[Action]
     
-    players: Dict[int, Player] = field(default_factory=dict)
-    seats: List[int] = field(default_factory=list)
-    btn_index: int = 0
+    players: Dict[int, Player]
+    seats: List[int]
 
     POSITIONS_PER_PLAYERCOUNT: \
         ClassVar[Dict[int, List[str]]] = {
