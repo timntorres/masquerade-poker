@@ -9,6 +9,92 @@ import random
 import math
 import time
 
+def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest_bet: float, min_raise: float) -> str:
+        """
+        CASES
+        1. bet, check, fold
+            Has anyone else bet this street?
+                No
+            Can I afford to bet more than a big blind? (self.chips > min_raise)
+                Yes
+        2. bet (all in), check, fold
+            Has anyone else bet this street?
+                No
+            Can I afford to bet more than a big blind? (self.chips > min_raise)
+                No
+            
+        3. call (all in), fold
+            Has anyone else bet this street?
+                Yes
+            Does the previous bettor have me covered?
+                Yes
+
+        4. raise (all in), call, fold
+            Has anyone else bet this street?
+                Yes
+            Does the previous bettor have me covered?
+                No
+            Can I min raise with chips to spare?
+                No
+
+        5. raise, call, fold
+            Has anyone else bet this street? 
+                Yes
+            Does the previous bettor have me covered?
+                No
+            Can I min raise with chips to spare?
+                Yes
+        """
+
+        prev_highest_bet = highest_bet
+        amount_to_call = prev_highest_bet - player.amount_in
+        """Betting / Checking logic"""
+        # Has anyone else bet this street?
+        prev_bet_exists = bet_occurred
+        # Can I afford to bet more than the minimum bet?
+        can_afford_min_bet = player.chips > min_raise
+        """Raising / Calling logic"""
+        # Does the previous bettor have me covered?
+        am_covered = amount_to_call >= player.chips
+        # Can I min raise with chips to spare?
+        can_raise_with_surplus = amount_to_call + min_raise < player.chips
+
+
+        is_bet_check = (not prev_bet_exists) or (player.amount_in == prev_highest_bet)
+        is_raise_call = prev_bet_exists and (player.amount_in != prev_highest_bet)
+
+        only_all_in_bet = (not prev_bet_exists) and (not can_afford_min_bet)
+        only_all_in_call = prev_bet_exists and am_covered
+        only_all_in_raise = prev_bet_exists and (not can_raise_with_surplus)
+
+        bet_or_raise = "bet" if is_bet_check else "raise"
+        check_or_call = "check" if is_bet_check else "call"
+
+        bet_all_in = "(all in)" if only_all_in_bet else ""
+        call_all_in = "(all in)" if only_all_in_call else ""
+        raise_all_in = "(all in)" if only_all_in_raise else ""
+
+        bet_or_raise_all_in = bet_all_in or raise_all_in
+
+        bet_or_raise_option = "" if call_all_in else f'''"{bet_or_raise} N" {bet_or_raise_all_in}\n\
+Such that N is a number between {min_raise} and {player.chips}.\n'''
+        ending = """Respond QUICKLY, with at most ONE word, and NO punctuation!"""
+
+        p = player.personality
+
+        return f"""\n{player.name}? It's your turn to act.\n\n\
+You've been dealt {player.hole_cards}.\n\
+There's ${round.pot.amount} in the pot.\n\
+You have ${player.chips} in chips.\n\
+\nAs {player.name}, you are {p.traits}. \
+Your No-Limit Hold 'Em playstyle is {p.style}. \
+This table has a strict time limit, so move quickly or be penalized.\n\n\
+Choose from the following responses:
+"{check_or_call}" {call_all_in}
+"fold"
+{bet_or_raise_option}
+{ending}"""
+
 
 def build_log(round: HoldemRound, perspective: Player | None = None) -> str:
     log_string = ""
@@ -40,7 +126,6 @@ def build_log(round: HoldemRound, perspective: Player | None = None) -> str:
 
         prev_phase = action.phase
     return log_string
-
 
 def log_action(round: HoldemRound, phase: str, subject: str, action: str, object: str, subject_id=-1) -> HoldemRound:
     action_list = round.actions
@@ -222,6 +307,7 @@ def deal_hole_cards(deck: Deck, round: HoldemRound) -> tuple[Deck, HoldemRound]:
     return deck, round
 
 def play_street(round: HoldemRound, phase: str) -> HoldemRound:
+
     is_preflop = (phase == Phases.PREFLOP)
     bet_occurred = is_preflop
     total_players = round.players.values()
@@ -237,6 +323,17 @@ def play_street(round: HoldemRound, phase: str) -> HoldemRound:
 
     if not action_remains:
         return round
+
+    # Flush players' amounts in at the beginning of each street.
+    updated_players = {}
+    for player in round.players.values():
+        id = player.player_id
+        if player in active_players:
+            updated_players[id] = update(player, amount_in=0)
+            continue
+        updated_players[id] = player
+    round = update(round, players=updated_players)
+
 
     # Get players by position.
 
@@ -264,9 +361,17 @@ def play_street(round: HoldemRound, phase: str) -> HoldemRound:
 
     acted = set() # Flush this each time a player bets.
 
+    highest_bet = 0 if not is_preflop else HoldemRound.BIG_BLIND
+    min_raise = HoldemRound.BIG_BLIND
+
     #while(current_player not in acted):
     log = build_log(round, current_player)
-    print(log)
+    prompt = build_prompt(round, current_player, bet_occurred, highest_bet, min_raise)
+
+    print("TOTAL CONTEXT:")    
+    print(log + prompt)
+    print("END TOTAL CONTEXT")    
+
     
     return round
         # Remember to preserve node relationships upon fold / all-in.
