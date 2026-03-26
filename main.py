@@ -57,6 +57,18 @@ def select_players(options: str, count=6) -> dict[int, Player]:
 
     return selected_players
 
+def remove_empty_stacks(round:HoldemRound) -> HoldemRound:
+    updated_players = {}
+    for player in round.players.values():
+        if(player.chips == 0):
+            continue
+        updated_players[player.player_id] = player
+    return update(round, players=updated_players)
+
+def trim_action_list(round: HoldemRound) -> HoldemRound:
+    action_list_trimmed = round.actions[40:] if len(round.actions) > 40 else round.actions
+    return update(round, actions=action_list_trimmed)
+
 def populate_seats(round: HoldemRound) -> HoldemRound:
     seats_ = list(round.players.keys())
     return update(round, seats=seats_)
@@ -84,7 +96,15 @@ if __name__ == "__main__":
          []
     )
 
-    round = populate_seats(round)
-
-    round = play_round(round)
     
+    round = populate_seats(round)
+    while(len(round.players.values()) > 1):
+        round = play_round(round)
+        round = remove_empty_stacks(round)
+        round = trim_action_list(round)
+
+        # Iterate position
+        prev_btn = round.players[round.btn_id]
+        next_btn_id = prev_btn.next_id_to_act
+        update(round, btn_id = round.players[next_btn_id])
+

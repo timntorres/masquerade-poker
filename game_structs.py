@@ -87,8 +87,8 @@ class HoldemRound:
 
     SMALL_BLIND: ClassVar[int] = 1
     BIG_BLIND: ClassVar[int] = 2
-    MIN_BUY_IN: ClassVar[int] = 80
-    MAX_BUY_IN: ClassVar[int] = 200
+    MIN_BUY_IN: ClassVar[int] = 20
+    MAX_BUY_IN: ClassVar[int] = 30
 
     btn_id: int
     round_id: int

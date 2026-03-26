@@ -219,7 +219,7 @@ def set_positions(round: HoldemRound) -> HoldemRound:
         round = log_action(
             round, 
             Phases.GAME_START, 
-            player.name, 
+            f"${player.chips} – {player.name}", 
             Actions.IS, 
             new_position,
             player.player_id
@@ -251,9 +251,9 @@ def attempt_bet(round: HoldemRound, player: Player, attempted_amount: int, actio
     updated_amount_in = player.amount_in + actual_bet
     updated_is_all_in = (player.chips == 0)
 
-    new_player = update(player, chips=updated_chips, amount_in=updated_amount_in, is_all_in=updated_is_all_in)
+    updated_player = update(player, chips=updated_chips, amount_in=updated_amount_in, is_all_in=updated_is_all_in)
 
-    round = update_player(round, new_player)
+    round = update_player(round, updated_player)
     round = update_pot(round, actual_bet)
 
     object = f"${updated_amount_in}"
@@ -267,7 +267,7 @@ def post_blinds(round: HoldemRound) -> HoldemRound:
     # Post blinds.
     sb = HoldemRound.SMALL_BLIND
     bb = HoldemRound.BIG_BLIND
-    
+    play_round
 
     sb_id = -1
     bb_id = -1
@@ -278,7 +278,10 @@ def post_blinds(round: HoldemRound) -> HoldemRound:
             bb_id = player.player_id
 
     round = attempt_bet(round, round.players[sb_id], sb, Actions.POST)
+    log_action(round, Phases.GAME_START, round.players[sb_id], Actions.POST, object=f"${sb}", subject_id=sb_id)
     round = attempt_bet(round, round.players[bb_id], bb, Actions.POST)
+    log_action(round, Phases.GAME_START, round.players[bb_id], Actions.POST, object=f"${bb}", subject_id=bb_id)
+
 
 
     return round
@@ -569,7 +572,7 @@ def play_round(round: HoldemRound) -> HoldemRound:
     # RIVER
 
     deck, river_card = Deck.pop(deck, 1)
-    round = log_action(round, Phases.TURN, "Dealer", Actions.RIVER, f"{community_cards} [{river_card}]")
+    round = log_action(round, Phases.TURN, "Dealer", Actions.TURN, f"{community_cards} [{river_card}]")
     community_cards += river_card
     round = update(round, community_cards=community_cards)
     round = play_street(round, Phases.RIVER)
