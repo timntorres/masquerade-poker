@@ -1,17 +1,23 @@
 import datetime
-from typing import List, Dict, Set, Optional, ClassVar
+from typing import List, Dict, Set, Tuple, Optional, ClassVar
 from dataclasses import dataclass, field
 
 from constants import Positions as p_
 from constants import Actions
 
+from utils import update
+
 @dataclass(frozen=True)
 class Personality:
     id: int
     name: str
-    traits: List[str]
+    traits: str
     style: str
-    quotes: list[str]
+    quotes: Tuple[str]
+
+    def __post_init__(self):
+        object.__setattr__(self, "quotes", tuple(self.traits))
+        
 
 @dataclass(frozen=True)
 class Player:
@@ -20,7 +26,7 @@ class Player:
     position: str
     personality: Personality
 
-    hole_cards: List[str]
+    hole_cards: Tuple[str]
     chips: float
     amount_in: float
 
@@ -28,6 +34,9 @@ class Player:
     is_all_in: bool
 
     next_id_to_act: int
+
+    def __post_init__(self):
+        object.__setattr__(self, "hole_cards", tuple(self.hole_cards))
 
     def __repr__(self):
         return self.name
@@ -61,6 +70,14 @@ class Action:
             formatted = f"[{self.time}]{object} – {self.subject}."
 
         return formatted
+
+    @staticmethod
+    def anonymize(action):
+        anonymized = ""
+        if(action.action == Actions.DEALT):
+            anonymized = "two cards"
+        return update(action, object=anonymized) if anonymized != "" else action
+
 
     __repr__ = __str__
 

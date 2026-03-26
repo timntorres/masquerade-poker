@@ -10,7 +10,7 @@ import math
 import time
 
 
-def generate_log_string(round: HoldemRound) -> str:
+def build_log(round: HoldemRound, perspective: Player | None = None) -> str:
     log_string = ""
     prev_phase = ""
     actions = round.actions
@@ -27,12 +27,20 @@ def generate_log_string(round: HoldemRound) -> str:
             log_string += "\n"
         prev_action_word = action.action
         
+        perspective_exists = perspective is not None
+        perspective_differs = perspective_exists and (action.subject_id != perspective.player_id)
+        is_dealer = action.subject_id == -1
+        must_anonymize = perspective_differs and (not is_dealer)
+        if must_anonymize:
+            action = Action.anonymize(action)
+            
         log_string += f"{action}\n"
         action.action
 
 
         prev_phase = action.phase
     return log_string
+
 
 def log_action(round: HoldemRound, phase: str, subject: str, action: str, object: str, subject_id=-1) -> HoldemRound:
     action_list = round.actions
@@ -172,7 +180,6 @@ def attempt_bet(round: HoldemRound, player: Player, attempted_amount: int, actio
 
 def post_blinds(round: HoldemRound) -> HoldemRound:
 
-
     # Post blinds.
     sb = HoldemRound.SMALL_BLIND
     bb = HoldemRound.BIG_BLIND
@@ -209,12 +216,61 @@ def deal_hole_cards(deck: Deck, round: HoldemRound) -> tuple[Deck, HoldemRound]:
 
         ids_seen.add(current_id)
         current_id = current_player.next_id_to_act
-            
+
     round = update(round, players=updated_players)
 
-
-
     return deck, round
+
+def play_street(round: HoldemRound, phase: str) -> HoldemRound:
+    is_preflop = (phase == Phases.PREFLOP)
+    bet_occurred = is_preflop
+    total_players = round.players.values()
+
+    # Attempt to skip action.
+
+    active_players = []
+    for player in total_players:
+        if (not player.has_folded) and (not player.is_all_in):
+            active_players.append(player)
+
+    action_remains = len(active_players) > 1
+
+    if not action_remains:
+        return round
+
+    # Get players by position.
+
+    players_by_position = {}
+
+    for player in total_players:
+        players_by_position[player.position] = player
+    
+    # Big blind ends action preflop.
+    last_to_act = players_by_position[Positions.BB]
+    
+    # Dealer ends action all other streets.
+    if phase != Phases.PREFLOP:
+        last_to_act = players_by_position[Positions.BTN]
+        # If BTN has folded we must find the nearest active player.
+        ppp = HoldemRound.POSITIONS_PER_PLAYERCOUNT[total_players]
+        ppp_index = ppp.index(Positions.BTN) # Always 0
+        while(last_to_act not in active_players):
+            ppp_index -= 1
+            prev_position = ppp[ppp_index]
+            last_to_act = players_by_position[prev_position]
+
+    first_id = last_to_act.next_id_to_act
+    current_player = round.players[first_id]
+
+    acted = set() # Flush this each time a player bets.
+
+    #while(current_player not in acted):
+    log = build_log(round, current_player)
+    print(log)
+    
+    return round
+        # Remember to preserve node relationships upon fold / all-in.
+
 
 def play_round(round: HoldemRound) -> HoldemRound:
     # Shuffle deck.
@@ -229,9 +285,9 @@ def play_round(round: HoldemRound) -> HoldemRound:
 
     # PREFLOP
     
-    # round = request_actions(round, Phases.PREFLOP)
+    round = play_street(round, Phases.PREFLOP)
 
-    log_string = generate_log_string(round)
+    log_string = build_log(round)
     print(log_string)
 
 

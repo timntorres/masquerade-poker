@@ -3,6 +3,8 @@ import math
 import time
 import copy
 
+from dataclasses import dataclass
+
 class Deck:
     
     RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"]
@@ -13,7 +15,7 @@ class Deck:
         deck = []
         for rank in Deck.RANKS:
             for suit in Deck.SUITS:
-                deck.append(Card(f"{rank}{suit}"))
+                deck.append(Card.get(f"{rank}{suit}"))
         return deck
 
     @staticmethod
@@ -29,12 +31,12 @@ class SameRank:
         self.rank = rank
         self.constituents = constituents
 
+@dataclass(frozen = True)
 class Card:
 
-    def __init__(self, card):
-        self.rank = card[0]
-        self.suit = card[1]
-        self.value = Deck.RANKS.index(self.rank)
+    rank: str
+    suit: str
+    value: str
 
     def __str__(self):
         return f"{self.rank}{self.suit}"
@@ -50,6 +52,14 @@ class Card:
         if not isinstance(other, Card):
             return NotImplemented
         return self.value < other.value
+
+    @staticmethod
+    def get(card: str) -> 'Card':
+        rank = card[0]
+        suit = card[1]
+        value = Deck.RANKS.index(rank)
+        return Card(rank, suit, value)
+
 
     @staticmethod
     def min(cards):

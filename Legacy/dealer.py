@@ -3,7 +3,7 @@ from action_manager import Round, Actions, Phases
 
 from ollama import chat, Client
 import anthropic
-from rand_manager import shuffle, init_rand
+from utils import shuffle, init_rand
 import os
 import yaml
 
