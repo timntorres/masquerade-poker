@@ -20,6 +20,7 @@ class Phases:
     FLOP: ClassVar[str] = "flop"
     TURN: ClassVar[str] = "turn"
     RIVER: ClassVar[str] = "river"
+    SHOWDOWN: ClassVar[str] = "showdown"
     GAME_END: ClassVar[str] = "game end"
 
 @dataclass(frozen=True)
@@ -38,6 +39,7 @@ class Actions:
     IS: ClassVar[str] = 'is'
     BUY: ClassVar[str] = 'buy'
     DEALT: ClassVar[str] = 'is dealt'
+    COLLECT: ClassVar[str] = 'collect'
 
     DOESNT_ADD_S: ClassVar[set] = set([DEALT])
 
@@ -54,5 +56,6 @@ class Actions:
         POST: '',
         IS: '',
         BUY: 'in for',
-        DEALT: ''
+        DEALT: '',
+        COLLECT: ''
     }

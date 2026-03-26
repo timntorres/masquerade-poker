@@ -4,6 +4,7 @@ from constants import Phases, Actions, Positions
 from deck import Deck
 from utils import init_rand, shuffle, get_time, update
 
+import anthropic
 
 import random
 import math
@@ -15,12 +16,12 @@ def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest
         1. bet, check, fold
             Has anyone else bet this street?
                 No
-            Can I afford to bet more than a big blind? (self.chips > min_raise)
+            Can I afford to bet more than a big blind?
                 Yes
         2. bet (all in), check, fold
             Has anyone else bet this street?
                 No
-            Can I afford to bet more than a big blind? (self.chips > min_raise)
+            Can I afford to bet more than a big blind?
                 No
             
         3. call (all in), fold
@@ -107,9 +108,9 @@ def build_log(round: HoldemRound, perspective: Player | None = None) -> str:
         # Headers
         if(action.phase != prev_phase):
             log_string += f"\n\n{action.phase.upper()}\n\n"
-
-        # Whitespace between actions of different types.
-        if(prev_action_word != "") and (action.action != prev_action_word):
+        
+        # Whitespace between actions of different types on game start.
+        if (action.phase == Phases.GAME_START) and (prev_action_word != "") and (action.action != prev_action_word):
             log_string += "\n"
         prev_action_word = action.action
         
@@ -127,7 +128,7 @@ def build_log(round: HoldemRound, perspective: Player | None = None) -> str:
         prev_phase = action.phase
     return log_string
 
-def log_action(round: HoldemRound, phase: str, subject: str, action: str, object: str, subject_id=-1) -> HoldemRound:
+def log_action(round: HoldemRound, phase: str, subject: str, action: str, object: str="", subject_id=-1) -> HoldemRound:
     action_list = round.actions
 
     money_involved = action == Actions.POST or action == Actions.BET or action == Actions.RAISE or action == Actions.CALL
@@ -259,8 +260,6 @@ def attempt_bet(round: HoldemRound, player: Player, attempted_amount: int, actio
     if(action == Actions.POST):
         object += " blind"
 
-    round = log_action(round, Phases.GAME_START, player.name, action, object, player.player_id)
-
     return round
 
 def post_blinds(round: HoldemRound) -> HoldemRound:
@@ -306,6 +305,35 @@ def deal_hole_cards(deck: Deck, round: HoldemRound) -> tuple[Deck, HoldemRound]:
 
     return deck, round
 
+def remove_node(round: HoldemRound, player: Player) -> HoldemRound:
+    seen = set([player])
+
+    players = round.players
+
+    orphan_id = player.next_id_to_act
+    orphan = players[orphan_id]
+
+    current_player = orphan
+    parent_candidate = current_player
+    
+    while current_player not in seen:
+        parent_candidate = current_player
+        seen.add(parent_candidate)
+
+        next_id = parent_candidate.next_id_to_act
+        current_player = players[next_id]
+    
+
+    new_parent = update(parent_candidate, next_id_to_act=orphan_id)
+    inactive_node = update(player, next_id_to_act=-1)
+
+    round = update_player(round, new_parent)
+    round = update_player(round, inactive_node)
+
+    return round
+
+
+
 def play_street(round: HoldemRound, phase: str) -> HoldemRound:
 
     is_preflop = (phase == Phases.PREFLOP)
@@ -345,7 +373,7 @@ def play_street(round: HoldemRound, phase: str) -> HoldemRound:
     # Big blind ends action preflop.
     last_to_act = players_by_position[Positions.BB]
     
-    # Dealer ends action all other streets.
+    # Btn ends action all other streets.
     if phase != Phases.PREFLOP:
         last_to_act = players_by_position[Positions.BTN]
         # If BTN has folded we must find the nearest active player.
@@ -364,18 +392,134 @@ def play_street(round: HoldemRound, phase: str) -> HoldemRound:
     highest_bet = 0 if not is_preflop else HoldemRound.BIG_BLIND
     min_raise = HoldemRound.BIG_BLIND
 
-    #while(current_player not in acted):
-    log = build_log(round, current_player)
-    prompt = build_prompt(round, current_player, bet_occurred, highest_bet, min_raise)
+    starting_active_ids = set([player.player_id for player in active_players])
+    folded_ids = set()
 
-    print("TOTAL CONTEXT:")    
-    print(log + prompt)
-    print("END TOTAL CONTEXT")    
+    while(current_player.player_id not in acted):
 
-    
+        # Skip all-in and folded players
+        if(current_player.is_all_in or current_player.has_folded):
+            print(f"Warning. This child ({current_player.name}) should have been severed.")
+            next_id = current_player.next_id_to_act
+            next_player = round.players[next_id]
+            print(f"Attempting to continue with {next_player}.")
+            current_player = next_player
+            continue
+
+
+        # Check if everyone else has folded.
+        if(len(set.difference(starting_active_ids, folded_ids)) == 1):
+            return round
+
+
+        log = build_log(round, current_player)
+        prompt = build_prompt(round, current_player, bet_occurred, highest_bet, min_raise)
+        context = log + prompt
+
+        print(f"\n\n\n{context}\n")
+
+        client = anthropic.Anthropic()
+        message = client.messages.create(
+            # claude-opus-4-6 -> ~$0.10/min
+            model="claude-haiku-4-5",
+            max_tokens=1000,
+            messages=[
+                {
+                    "role": "user",
+                    "content": context,
+                }
+            ],
+        )
+        response = message.content[0].text
+
+        print(f"\n\n\nRESPONSE: {response}\n\n\n")
+        processed = response.strip().lower().replace('*', '').replace('"', '') # AI bookend shit in ** sometimes.
+
+
+        # If they didn't follow instructions, split it by \n\n and prune all but the last instance.
+        if(len(processed) > 11):
+            processed = processed.split('\n\n')[-1]
+
+        action = ""
+        bet_amount = 0
+        has_folded = False
+        is_all_in = False
+        if(Actions.BET in processed):
+            action = Actions.BET
+            bet_amount = int(processed.split()[-1])
+            acted = set([current_player.player_id]) # Everyone but this player needs to act again.
+            round = log_action(round, phase, current_player, action, object=f"${bet_amount}", subject_id=current_player.player_id)
+
+        elif(Actions.RAISE in processed):
+            action = Actions.RAISE
+            has_number = False
+            for i in '1234567890':
+                if i in processed:
+                    has_number = True
+                    break
+            raise_by = int(processed.split()[-1]) if has_number else min_raise
+            bet_amount = highest_bet + raise_by - current_player.amount_in
+            acted = set([current_player.player_id]) # Everyone but this player needs to act again.
+            round = log_action(round, phase, current_player, action, object=f"${bet_amount}", subject_id=current_player.player_id)
+
+        elif (Actions.CALL in processed):
+            # Keep this in for now, for when call unexpectedly fails to yield an all-in...
+            print(f"DEBUGGING: attempt_bet({current_player.chips}, {highest_bet} - {current_player.amount_in})")
+            action = Actions.CALL
+            bet_amount = highest_bet - current_player.amount_in
+            round = log_action(round, phase, current_player, action, subject_id=current_player.player_id)
+
+        elif ("check" in processed):
+            action = Actions.CHECK
+            bet_amount = 0
+            round = log_action(round, phase, current_player, action, subject_id=current_player.player_id)
+
+        else:
+            action = Actions.FOLD
+            has_folded = True
+            bet_amount = 0
+            round = log_action(round, phase, current_player, action, subject_id=current_player.player_id)
+            folded_ids.add(current_player.player_id)
+
+        if(bet_amount == current_player.chips):
+            current_player = update(current_player, is_all_in=True)
+
+        if(bet_amount != 0):
+            round = attempt_bet(round, current_player, bet_amount, action)
+
+        current_player = update(current_player, amount_in=bet_amount, has_folded=has_folded, is_all_in=is_all_in)
+        round = update_player(round, current_player)
+        acted.add(current_player.player_id)
+
+
+        next_id = current_player.next_id_to_act
+
+        if(current_player.is_all_in or current_player.has_folded):
+            round = remove_node(round, current_player)
+
+        current_player = round.players[next_id]
     return round
-        # Remember to preserve node relationships upon fold / all-in.
 
+def find_winners(round: HoldemRound, phase) -> list[Player]:
+    is_showdown = phase == Phases.SHOWDOWN
+    folded_count = sum([1 for p in round.players.values() if p.has_folded])
+
+    if (not is_showdown) and (folded_count < len(round.players.values()) - 1):
+        return []
+    elif (not is_showdown) and (folded_count == len(round.players.values()) - 1):
+        return [p for p in round.players.values() if not p.has_folded]
+
+def settle_pot(round: HoldemRound, phase: str, winners: list[Player]):
+    pot = round.pot
+    while(pot != None):
+        # TODO: Figure out the logic of side pots.
+        amount_per_winner = pot.amount/len(winners)
+        for player in winners:
+            player = update(player, chips=player.chips + amount_per_winner)
+            update_player(round, player)
+            round = log_action(round, phase, player.name, Actions.COLLECT, str(amount_per_winner), player.player_id)
+        pot = pot.parent_pot
+    return round
 
 def play_round(round: HoldemRound) -> HoldemRound:
     # Shuffle deck.
@@ -391,6 +535,14 @@ def play_round(round: HoldemRound) -> HoldemRound:
     # PREFLOP
     
     round = play_street(round, Phases.PREFLOP)
+    folded_count = sum([1 for p in round.players.values() if p.has_folded])
+
+    winners = find_winners(round, Phases.PREFLOP)
+    if len(winners) != 0:
+        round = settle_pot(round, Phases.PREFLOP, winners)
+        return round
+    
+
 
     log_string = build_log(round)
     print(log_string)
