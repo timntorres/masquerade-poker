@@ -34,6 +34,9 @@ class Actions:
     SAY: ClassVar[str] = 'say'
     THINK: ClassVar[str] = 'think'
     WIN: ClassVar[str] = 'win'
+    POST: ClassVar[str] = 'post'
+    IS: ClassVar[str] = 'is'
+    BUY: ClassVar[str] = 'buy'
 
     PREP_PHRASES: ClassVar[Dict[str, str]] = {
         SHUFFLE: 'with',
@@ -44,5 +47,8 @@ class Actions:
         FOLD: '',
         SAY: '',
         THINK: '',
-        WIN: ''
+        WIN: '',
+        POST: '',
+        IS: '',
+        BUY: 'in for'
     }

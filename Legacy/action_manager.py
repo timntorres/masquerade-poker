@@ -50,7 +50,13 @@ class Action:
         preposition = " " + preposition if preposition != "" else ""
         object =  " " + self.object if self.object != "" else ""
 
-        return f"{self.name} {self.action}s{preposition}{object}."
+        formatted = f"{self.name} {self.action}s{preposition}{object}."
+
+        print(self.action + " versus " + Actions.IS)
+        if(self.action == Actions.IS):
+            formatted = f"{object} {self.action} {self.name}."
+
+        return "HELLO!?!?!?!?!!?!??!"
 
     __repr__ = __str__
 

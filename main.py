@@ -5,7 +5,7 @@ from game_structs import Personality, Player, HoldemRound, Pot
 from game_logic import play_round
 from constants import Positions
 
-from rand_manager import shuffle
+from utils import shuffle, get_time
 
 def load_personalities(filename: str):
     with open(filename, 'r') as file:
@@ -56,6 +56,18 @@ def select_players(options: str, count=6) -> dict[int, Player]:
 
     return selected_players
 
+def populate_seats(round: HoldemRound) -> HoldemRound:
+    seats = list(round.players.keys())
+    return HoldemRound(
+        round.round_id,
+        get_time(),
+        round.pot,
+        round.actions,
+        round.players,
+        seats
+    )
+
+
 if __name__ == "__main__":
     personalities = load_personalities('characters.yaml')
     player_pool = init_players(personalities)
@@ -74,6 +86,8 @@ if __name__ == "__main__":
          [],
          player_dict
     )
+
+    round = populate_seats(round)
 
     round = play_round(round)
     
