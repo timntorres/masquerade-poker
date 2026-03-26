@@ -5,7 +5,7 @@ from game_structs import Personality, Player, HoldemRound, Pot
 from game_logic import play_round
 from constants import Positions
 
-from utils import shuffle, get_time
+from utils import shuffle, get_time, update
 
 def load_personalities(filename: str):
     with open(filename, 'r') as file:
@@ -31,16 +31,16 @@ def init_players(personalities: list[Personality]) -> list[Player]:
         players = []
         for personality in personalities:
             p = Player(
-                personality.id,
-                personality.name,
-                Positions.NONE,
-                personality,
-                [],
-                HoldemRound.MAX_BUY_IN,
-                0,
-                False,
-                False,
-                -1
+                player_id=personality.id,
+                name=personality.name,
+                position=Positions.NONE,
+                personality=personality,
+                hole_cards=[],
+                chips=HoldemRound.MAX_BUY_IN,
+                amount_in=0,
+                has_folded=False,
+                is_all_in=False,
+                next_id_to_act=-1
             )
             players.append(p)
         return players
@@ -51,43 +51,36 @@ def select_players(options: str, count=6) -> dict[int, Player]:
     selected_players = {}
 
     for i in range(count):
-          player = options[i]
-          id = player.player_id
-          selected_players[id] = player
+        player = options[i]
+        id = player.player_id
+        selected_players[id] = player
 
     return selected_players
 
 def populate_seats(round: HoldemRound) -> HoldemRound:
-    seats = list(round.players.keys())
-    return HoldemRound(
-        round.btn_id,
-        round.round_id,
-        get_time(),
-        round.pot,
-        round.actions,
-        round.players,
-        seats
-    )
+    seats_ = list(round.players.keys())
+    return update(round, seats=seats_)
 
 
 if __name__ == "__main__":
     personalities = load_personalities('characters.yaml')
     player_pool = init_players(personalities)
-    player_dict = select_players(player_pool)
+    players = select_players(player_pool)
 
     empty_pot = Pot(
-            set(player_dict.keys()),
+            set(players.keys()),
             0,
             None
          )
 
     round = HoldemRound(
-         list(player_dict.keys())[0],
-         "0",
+         list(players.keys())[0],
+         0,
          get_time(),
          empty_pot,
          [],
-         player_dict,
+         players,
+         [],
          []
     )
 

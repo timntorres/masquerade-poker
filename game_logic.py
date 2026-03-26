@@ -2,7 +2,7 @@
 from game_structs import HoldemRound, Action, Player, Pot
 from constants import Phases, Actions, Positions
 from deck import Deck
-from utils import init_rand, shuffle, get_time
+from utils import init_rand, shuffle, get_time, update
 
 
 import random
@@ -46,15 +46,7 @@ def log_action(round: HoldemRound, phase: str, subject: str, action: str, object
 
     print(f"ACTION PREVIEW. {new_action}")
 
-    return HoldemRound(
-        round.btn_id,
-        round.round_id,
-        round.time,
-        round.pot,
-        action_list, #
-        round.players,
-        round.seats,
-    )
+    return update(round, actions=action_list)
 
 def init_rand(round, seed=None):
     if(seed == None):
@@ -67,14 +59,16 @@ def shuffle(l):
     random.shuffle(l)
     return l
 
-def init_players(round: HoldemRound) -> HoldemRound:
+def refresh_players(round: HoldemRound) -> HoldemRound:
     updated_players = {}
     updated_seats = [-1, -1, -1, -1, -1, -1]
 
+
     # Reset players' values
     for player in round.players.values():
+
         updated_player = Player(
-            player.player_id, 
+            player.player_id,
             player.name, 
             Positions.NONE, 
             player.personality, 
@@ -90,12 +84,8 @@ def init_players(round: HoldemRound) -> HoldemRound:
         seat_index = round.seats.index(player.player_id)
         updated_seats[seat_index] = updated_player.player_id
     
-    return HoldemRound( \
-        round.btn_id, round.round_id, round.time, 
-        round.pot, round.actions, 
-        updated_players, updated_seats
-        
-    )
+
+    return update(round, players=updated_players, seats=updated_seats)
     
 def set_positions(round: HoldemRound) -> HoldemRound:
     # Set positions.
@@ -141,17 +131,7 @@ def set_positions(round: HoldemRound) -> HoldemRound:
             player.player_id
         )
 
-    round = HoldemRound(
-        round.btn_id,
-        round.round_id,
-        get_time(),
-        round.pot,
-        round.actions,
-        updated_players, #
-        round.seats
-    )
-
-    return round
+    return update(round, players=updated_players)
 
 def update_player(round: HoldemRound, player_to_update: Player) -> HoldemRound:
 
@@ -165,30 +145,11 @@ def update_player(round: HoldemRound, player_to_update: Player) -> HoldemRound:
             continue
         updated_players[id] = player_to_update
 
-    return HoldemRound(
-        round.btn_id,
-        round.round_id,
-        round.time,
-        round.pot,
-        round.actions,
-        updated_players, #
-        round.seats
-    )
+    return update(round, players=updated_players)
 
 def update_pot(round: HoldemRound, updated_amount: float) -> HoldemRound:
-    return HoldemRound(
-        round.btn_id,
-        round.round_id,
-        round.time,
-        Pot(
-            round.pot.player_ids,
-            updated_amount, #
-            round.pot.parent_pot
-        ),
-        round.actions,
-        round.players,
-        round.seats
-    )
+    updated_pot = update(round.pot, amount=updated_amount)
+    return update(round, pot=updated_pot)
 
 def attempt_bet(round: HoldemRound, player: Player, attempted_amount: int, action: str) -> HoldemRound:
     actual_bet = min(attempted_amount, player.chips)
@@ -196,18 +157,7 @@ def attempt_bet(round: HoldemRound, player: Player, attempted_amount: int, actio
     updated_amount_in = player.amount_in + actual_bet
     updated_is_all_in = (player.chips == 0)
 
-    new_player = Player(
-        player.player_id,
-        player.name,
-        player.position,
-        player.personality,
-        player.hole_cards,
-        updated_chips, #
-        updated_amount_in, #
-        player.has_folded,
-        updated_is_all_in,
-        player.next_id_to_act
-    )
+    new_player = update(player, chips=updated_chips, amount_in=updated_amount_in, is_all_in=updated_is_all_in)
 
     round = update_player(round, new_player)
     round = update_pot(round, actual_bet)
@@ -253,50 +203,14 @@ def deal_hole_cards(deck: Deck, round: HoldemRound) -> tuple[Deck, HoldemRound]:
         current_player = round.players[current_id]
         deck, hole_cards = Deck.pop(deck, 2)
 
-        updated_players[current_player.player_id] = Player(
-            current_player.player_id,
-            current_player.name,
-            current_player.position,
-            current_player.personality,
-            hole_cards, #
-            current_player.chips,
-            current_player.amount_in,
-            current_player.has_folded,
-            current_player.is_all_in,
-            current_player.next_id_to_act
-        )
+        updated_players[current_player.player_id] = update(current_player, hole_cards=hole_cards)
+
         log_action(round, Phases.GAME_START, current_player.name, Actions.DEALT, str(hole_cards), current_player.player_id)
 
         ids_seen.add(current_id)
         current_id = current_player.next_id_to_act
-
-
-
-    for player in round.players.values():
-
-        deck, hole_cards = Deck.pop(deck, 2)
-        updated_players[player.player_id] = Player(
-            player.player_id,
-            player.name,
-            player.position,
-            player.personality,
-            hole_cards,
-            player.chips,
-            player.amount_in,
-            player.has_folded,
-            player.is_all_in,
-            player.next_id_to_act
-        )
-    
-    round = HoldemRound(
-        round.btn_id,
-        round.round_id,
-        round.time,
-        round.pot,
-        round.actions,
-        updated_players,
-        round.seats
-    )
+            
+    round = update(round, players=updated_players)
 
 
 
@@ -306,12 +220,16 @@ def play_round(round: HoldemRound) -> HoldemRound:
     # Shuffle deck.
     round = init_rand(round)
     button_index = 0
-    round = init_players(round)
+    round = refresh_players(round)
     deck = shuffle(Deck.generate_deck())
     round = set_positions(round)
     round = post_blinds(round)
 
     deck, round = deal_hole_cards(deck, round)
+
+    # PREFLOP
+    
+    # round = request_actions(round, Phases.PREFLOP)
 
     log_string = generate_log_string(round)
     print(log_string)

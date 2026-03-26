@@ -72,14 +72,16 @@ class HoldemRound:
     BIG_BLIND: ClassVar[int] = 2
     MIN_BUY_IN: ClassVar[int] = 80
     MAX_BUY_IN: ClassVar[int] = 200
+
     btn_id: int
-    round_id: str
+    round_id: int
     time: datetime
     pot: Pot
     actions: List[Action]
     
     players: Dict[int, Player]
     seats: List[int]
+    community_cards: List[str]
 
     POSITIONS_PER_PLAYERCOUNT: \
         ClassVar[Dict[int, List[str]]] = {
@@ -88,4 +90,5 @@ class HoldemRound:
             4: [p_.BTN, p_.SB, p_.BB, p_.CO],
             5: [p_.BTN, p_.SB, p_.BB, p_.HJ, p_.CO],
             6: [p_.BTN, p_.SB, p_.BB, p_.UTG, p_.HJ, p_.CO]
-        }
+        }    
+

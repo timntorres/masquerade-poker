@@ -2,8 +2,12 @@ import random
 import math
 import time
 from datetime import datetime
+from dataclasses import replace
 
 from constants import Phases, Actions
+
+def update(dataclass_, **kwargs):
+    return replace(dataclass_, **kwargs)
 
 def get_time():
     return datetime.now().strftime("%H:%M:%S")
@@ -22,4 +26,5 @@ def init_rand(round, seed=None):
 def shuffle(l):
     random.shuffle(l)
     return l
+
 
