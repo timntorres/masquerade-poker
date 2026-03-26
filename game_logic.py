@@ -377,7 +377,7 @@ def play_street(round: HoldemRound, phase: str) -> HoldemRound:
     if phase != Phases.PREFLOP:
         last_to_act = players_by_position[Positions.BTN]
         # If BTN has folded we must find the nearest active player.
-        ppp = HoldemRound.POSITIONS_PER_PLAYERCOUNT[total_players]
+        ppp = HoldemRound.POSITIONS_PER_PLAYERCOUNT[len(total_players)]
         ppp_index = ppp.index(Positions.BTN) # Always 0
         while(last_to_act not in active_players):
             ppp_index -= 1
@@ -535,17 +535,50 @@ def play_round(round: HoldemRound) -> HoldemRound:
     # PREFLOP
     
     round = play_street(round, Phases.PREFLOP)
-    folded_count = sum([1 for p in round.players.values() if p.has_folded])
 
     winners = find_winners(round, Phases.PREFLOP)
     if len(winners) != 0:
         round = settle_pot(round, Phases.PREFLOP, winners)
         return round
-    
 
+    # FLOP
+
+    deck, community_cards = Deck.pop(deck, 3)
+    round = update(round, community_cards=community_cards)
+    round = log_action(round, Phases.FLOP, "Dealer", Actions.SHOW, str(community_cards))
+    round = play_street(round, Phases.FLOP)
+
+    winners = find_winners(round, Phases.FLOP)
+    if len(winners) != 0:
+        round = settle_pot(round, Phases.FLOP, winners)
+        return round
+    
+    # TURN
+
+    deck, turn_card = Deck.pop(deck, 1)
+    round = log_action(round, Phases.TURN, "Dealer", Actions.TURN, f"{community_cards} [{turn_card}]")
+    community_cards += turn_card
+    round = update(round, community_cards=community_cards)
+    round = play_street(round, Phases.TURN)
+
+    winners = find_winners(round, Phases.TURN)
+    if len(winners) != 0:
+        round = settle_pot(round, Phases.TURN, winners)
+        return round
+
+    # RIVER
+
+    deck, river_card = Deck.pop(deck, 1)
+    round = log_action(round, Phases.TURN, "Dealer", Actions.RIVER, f"{community_cards} [{river_card}]")
+    community_cards += river_card
+    round = update(round, community_cards=community_cards)
+    round = play_street(round, Phases.RIVER)
+
+    # TODO: Win conditions for showdown
 
     log_string = build_log(round)
     print(log_string)
+    return round
 
 
 

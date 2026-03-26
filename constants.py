@@ -40,6 +40,8 @@ class Actions:
     BUY: ClassVar[str] = 'buy'
     DEALT: ClassVar[str] = 'is dealt'
     COLLECT: ClassVar[str] = 'collect'
+    SHOW: ClassVar[str] = 'show'
+    TURN: ClassVar[str] = 'turn'
 
     DOESNT_ADD_S: ClassVar[set] = set([DEALT])
 
@@ -57,5 +59,7 @@ class Actions:
         IS: '',
         BUY: 'in for',
         DEALT: '',
-        COLLECT: ''
+        COLLECT: '',
+        SHOW: '',
+        TURN: ''
     }
