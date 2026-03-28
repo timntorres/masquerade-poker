@@ -1,9 +1,9 @@
 import datetime
-from typing import List, Dict, Set, Tuple, Optional, ClassVar
+from typing import List, Dict, Set, Tuple, Optional, ClassVar, TypeVar, Generic
 from dataclasses import dataclass, field
 
 from constants import Positions as p_
-from constants import Actions
+from constants import Actions, Subjects, Grammar
 
 from utils import update
 
@@ -33,7 +33,8 @@ class Player:
     has_folded: bool
     is_all_in: bool
 
-    next_id_to_act: int
+    prev_id: int
+    next_id: int
 
     def __post_init__(self):
         object.__setattr__(self, "hole_cards", tuple(self.hole_cards))
@@ -47,35 +48,59 @@ class Pot:
     amount: float
     parent_pot: Optional['Pot'] = field(default=None)
 
+T = TypeVar("T")
+
 @dataclass(frozen=True)
-class Action:
+class Snapshot(Generic[T]):
+    typed_object: T
     phase: str
+    round_id: int
+    pot: Pot
+    community_cards: Tuple[str]
+    players: Dict[int, Player]
+    time: datetime
+    subject_id: int = -1
+
+    def __post_init__(self):
+        object.__setattr__(self, "community_cards", tuple(self.community_cards))
+
+
+@dataclass(frozen=True)
+class Action():
+    subject_type: str
     subject: str
-    subject_id: int
     action: str
     object: str
-    time: datetime
+    snapshot: Snapshot
 
     def __str__(self):
+        phrase = Actions.PHRASES[self.action]
 
-        preposition = Actions.PREP_PHRASES[self.action]
-        preposition = " " + preposition if preposition != "" else ""
-        object =  " " + self.object if self.object != "" else ""
+        subject = self.subject
 
-        s = '' if self.action in Actions.DOESNT_ADD_S else 's'
+        if (Grammar.STACK in phrase) and (self.subject_type != Subjects.DEALER):
+            player = self.snapshot.players
+            id = self.snapshot.subject_id
+            phrase = phrase.replace(Grammar.STACK, f"${player[id].chips}")
 
-        formatted = f"[{self.time}] {self.subject} {self.action}{s}{preposition}{object}."
+        phrase = phrase.replace(Grammar.SUBJECT, subject)
+        phrase = phrase.replace(Grammar.OBJECT, self.object)
+        all_in = False
 
-        if(self.action == Actions.IS):
-            formatted = f"[{self.time}]{object} – {self.subject}."
-
-        return formatted
+        if (self.subject_type == Subjects.PLAYER):
+            id = self.snapshot.subject_id
+            player = self.snapshot.players[id]
+            all_in = player.is_all_in
+    
+        all_in_phrase = " and is all-in" if all_in else ""        
+        phrase = phrase.replace(Grammar.ALL_IN, all_in_phrase)
+        return phrase
 
     @staticmethod
     def anonymize(action):
         anonymized = ""
         if(action.action == Actions.DEALT):
-            anonymized = "two cards"
+            anonymized = "[??, ??]"
         return update(action, object=anonymized) if anonymized != "" else action
 
 
@@ -90,7 +115,7 @@ class HoldemRound:
     MIN_BUY_IN: ClassVar[int] = 20
     MAX_BUY_IN: ClassVar[int] = 30
 
-    btn_id: int
+    phase: str
     round_id: int
     time: datetime
     pot: Pot
@@ -99,6 +124,8 @@ class HoldemRound:
     players: Dict[int, Player]
     seats: List[int]
     community_cards: List[str]
+
+    seat_index_of_btn: int = -1
 
     POSITIONS_PER_PLAYERCOUNT: \
         ClassVar[Dict[int, List[str]]] = {
