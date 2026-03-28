@@ -3,7 +3,7 @@ from datetime import datetime
 
 from game_structs import Personality, Player, HoldemRound, Pot
 from game_logic import play_round
-from constants import Positions
+from constants import Positions, Phases
 
 from utils import shuffle, get_time, update
 
@@ -40,7 +40,8 @@ def init_players(personalities: list[Personality]) -> list[Player]:
                 amount_in=0,
                 has_folded=False,
                 is_all_in=False,
-                next_id_to_act=-1
+                prev_id=-1,
+                next_id=-1
             )
             players.append(p)
         return players
@@ -86,25 +87,30 @@ if __name__ == "__main__":
          )
 
     round = HoldemRound(
-         list(players.keys())[0],
-         0,
-         get_time(),
-         empty_pot,
-         [],
-         players,
-         [],
-         []
+        phase = Phases.GAME_START,
+        round_id = 0,
+        time = get_time(),
+        pot = empty_pot,
+        actions = [],
+        players = players,
+        seats = [],
+        community_cards = []
     )
 
     
     round = populate_seats(round)
     while(len(round.players.values()) > 1):
+
+        actions = round.actions
+        if(len(actions) > 30):
+            surplus = len(actions)-30
+            round = update(round, actions=actions[surplus:])
+
+        # Update the empty pot with all the remaining players in round
+        empty_pot = update(empty_pot, player_ids=set(round.players.keys()))
+
+        round = update(round, pot=empty_pot, community_cards=[], round_id=round.round_id+1)
         round = play_round(round)
         round = remove_empty_stacks(round)
         round = trim_action_list(round)
-
-        # Iterate position
-        prev_btn = round.players[round.btn_id]
-        next_btn_id = prev_btn.next_id_to_act
-        update(round, btn_id = round.players[next_btn_id])
 
