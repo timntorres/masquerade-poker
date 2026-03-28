@@ -4,6 +4,7 @@ import time
 import copy
 
 from dataclasses import dataclass
+from game_structs import Player
 
 class Deck:
     
@@ -279,11 +280,15 @@ class Hand:
         return candidates
 
     @staticmethod
-    def find_winners(players, community_cards):
+    def find_winners(players: list[Player], community_cards: list[str]) -> list['Hand']:
         hands = {}
         
         for player in players:
-            hand = Hand.classify(player.hole_cards + community_cards, player)
+            hole_cards = player.hole_cards
+            if(type(hole_cards) == tuple):
+                hole_cards = list(hole_cards)
+
+            hand = Hand.classify(hole_cards + community_cards, player)
 
             hands.setdefault(hand.hand_id, []).append(hand)
         
