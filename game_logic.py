@@ -1,5 +1,5 @@
 
-from game_structs import HoldemRound, Action, Player, Snapshot, T, Pot
+from game_structs import HoldemRound, Action, Player, Snapshot, T, Pot, PotQueue
 from constants import Phases, Actions, Positions, Subjects
 from deck import Deck, Hand, Card
 from utils import init_rand, shuffle, get_time, update
@@ -10,6 +10,7 @@ import random
 import math
 round_ = round # fml for naming the HoldemRound instance round
 import time
+import copy
 
 def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest_bet: float, min_raise: float) -> str:
         """
@@ -49,7 +50,7 @@ def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest
         """
 
         prev_highest_bet = highest_bet
-        amount_to_call = prev_highest_bet - player.amount_in
+        amount_to_call = prev_highest_bet - player.amount_in_street
         """Betting / Checking logic"""
         # Has anyone else bet this street?
         prev_bet_exists = bet_occurred
@@ -62,8 +63,7 @@ def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest
         can_raise_with_surplus = amount_to_call + min_raise < player.chips
 
 
-        is_bet_check = (not prev_bet_exists) or (player.amount_in == prev_highest_bet)
-        is_raise_call = prev_bet_exists and (player.amount_in != prev_highest_bet)
+        is_bet_check = (not prev_bet_exists) or (player.amount_in_street == prev_highest_bet)
 
         only_all_in_bet = (not prev_bet_exists) and (not can_afford_min_bet)
         only_all_in_call = prev_bet_exists and am_covered
@@ -79,14 +79,14 @@ def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest
         bet_or_raise_all_in = bet_all_in or raise_all_in
 
         bet_or_raise_option = "" if call_all_in else f'''"{bet_or_raise} N" {bet_or_raise_all_in}\n\
-Such that N is a number between {min_raise} and {player.chips}.\n'''
+Such that N is a number between {min_raise} and {player.chips - prev_highest_bet}.\n'''
         ending = """Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!"""
 
         p = player.personality
 
         return f"""\n{player.name}? It's your turn to act.\n\n\
 You've been dealt {player.hole_cards}.\n\
-There's ${round.pot.amount} in the pot.\n\
+There's ${round.pot_queue.total_amount} in the pot.\n\
 You have ${player.chips} in chips.\n\
 \nAs {player.name}, you are {p.traits}. \
 Your No-Limit Hold 'Em playstyle is {p.style}. \
@@ -154,9 +154,9 @@ def log_action(round: HoldemRound, action: str, typed_object: T, object: str | N
         typed_object=typed_object, 
         phase=round.phase, 
         round_id=round.round_id,
-        pot=round.pot, 
-        community_cards=round.community_cards, 
-        players=round.players, 
+        pot_queue=round.pot_queue,
+        community_cards=copy.deepcopy(round.community_cards), 
+        players=copy.deepcopy(round.players), 
         time=get_time(), 
         subject_id=subject_id
         )
@@ -199,7 +199,8 @@ def refresh_players(round: HoldemRound) -> HoldemRound:
             personality=player.personality, 
             hole_cards=[], 
             chips=player.chips, 
-            amount_in=0, 
+            amount_in_street=0, 
+            amount_in_round=0,
             has_folded=False, 
             is_all_in=False,
             prev_id=-1,
@@ -262,20 +263,185 @@ def update_players(round: HoldemRound, players_to_update: list[Player]) -> Holde
 
     return update(round, players=updated_players)
 
-def update_pot(round: HoldemRound, amount_to_add: float) -> HoldemRound:
-    updated_pot = update(round.pot, amount=round.pot.amount + amount_to_add)
-    return update(round, pot=updated_pot)
+def right_pot(round: HoldemRound) -> HoldemRound:
+
+    pot_queue = round.pot_queue
+    ids_to_bets = pot_queue.ids_to_bets
+    right_pots = pot_queue.right_pots if len(pot_queue.right_pots) else (Pot({}, 0),)
+
+    if(len(ids_to_bets) == 0):
+        return round
+
+    # At the end of each street, the dealer creates one side pot for each unique all-in stack size,
+    # in order from smallest to largest. Each side pot contains the maximum number of chips that a
+    # player of that stack size can win.
+    
+    # The remainder (shared by each person who bet the max bet size) goes into the main pot.
+    # If the main pot has 1 player involved, then it's uncalled and will return to that player.
+    # (This will be checked for at showdown.)
+
+    # To right the pot, first we determine if a side pot must be created. 
+    # Any of these two conditions may be met.
+
+    # SIDE POT CONDITION 1. Same bet sizes among non-folded players
+    # On all streets except showdown: Co-existence of all-in and non all-in players
+
+    bet_sizes = [bet for bet in ids_to_bets.values()]
+    unique_bet_sizes = set(bet_sizes)
+    sorted_unique_bet_sizes = sorted(unique_bet_sizes)
+
+    amount_this_street = sum(bet_sizes)
+
+    non_folded_bet_sizes = [ids_to_bets[id] for id in ids_to_bets if not round.players[id].has_folded]
+    unique_non_folded_bet_sizes = set(non_folded_bet_sizes)
+
+    all_in_ids = []
+    ids_in_action = []
+
+    for player in round.players.values():
+        if(player.is_all_in):
+            all_in_ids.append(player.player_id)
+            continue
+        if(player.has_folded):
+            continue
+        ids_in_action.append(player.player_id)
+    
+    coexistence = len(all_in_ids) > 0 and len(ids_in_action) > 1 
+    # ids_in_action > 1 because, e.g., one person with chips remaining has no more reason to bet.
+    is_river = round.phase == Phases.RIVER
+    condition_1_met = coexistence and (not is_river) # Last street means "chips left behind" no longer create side pots.
+    all_same_bet_size = len(unique_non_folded_bet_sizes) == 1
+
+    if all_same_bet_size:
+        main_pot = right_pots[-1]
+        main_pot = update(main_pot, ids_involved=ids_to_bets.keys(), amount=main_pot.amount + amount_this_street)
+
+        tuple_to_concatenate = (main_pot,)
+        if condition_1_met:
+            # What we called the main pot, above, is now a side pot.
+            actual_main_pot = Pot(set([id for id in ids_in_action]), 0)
+            tuple_to_concatenate = tuple_to_concatenate + (actual_main_pot,)
+
+        right_pots = right_pots[:-1] + tuple_to_concatenate
+        pot_queue = update(pot_queue, right_pots=right_pots, ids_to_bets={})
+        round = update(round, pot_queue=pot_queue)
+        print("condition 1")
+        print(ids_to_bets)
+        print(right_pots)
+        return round
+
+    # SIDE POT CONDITION 2. Different bet sizes
+    # The existence of differing non-folded bet sizes at street end implies that each smaller bet size must
+    # belong to an all-in player and, therefore, must yield a side pot.
+
+    copy_to_disburse = copy.copy(ids_to_bets) # Subtract from this one while iterating through the other one.
+
+    # Create one side pot for each differing bet size with an all-in person in it.
+    # TODO: Determine if the lowest side pot should update the values of the previous main pot?
+
+    ids_removed = set()
+
+    # EXAMPLE:
+    # Iterating through bet sizes A, B, and C
+    #
+    #   A     B        C   
+    # ##| <- P|ayer in |he blinds who folded
+    # ##|#####| <- Shor|-stacked player who raised all-in 
+    # ##|#####| <- Pers|n who called the all-in then folded to a 3-bet
+    # ##|#####|########| <- Person who 3-bet
+    # ##|#####|########| <- Stack leader cold-called
+    #
+    # Bet size A has the blind who folded.
+    # Bet size B has one all-in and one caller who folded.
+    # Bet size C has the two stack leaders.
+    # 
+    # So for every tier like A, where there's no one at that tier who's all-in,
+    # we add it to dead money, then add dead money to the next eligible pot's tier.
+    # 
+    # i.e. For a side pot to be created at some bet size, there must be at least one 
+    # player at that bet size who's all-in.
+
+    main_pot = right_pots[-1]
+    right_pots = right_pots[:-1]
+    dead_money = main_pot.amount # add this to the next eligible pot
+
+    for bet_size in sorted_unique_bet_sizes:
+
+        bettors_of_this_size = [round.players[id] for id in ids_to_bets \
+            if (ids_to_bets[id] == bet_size)]
+
+        those_who_folded = [player for player in bettors_of_this_size \
+            if player.has_folded]
+
+        # Add this value (decremented by smaller bet sizes' side pots) 
+        # for every player remaining in copy_to_disburse.
+        id_of_a_bettor = bettors_of_this_size[0].player_id
+        adjusted_amount = copy_to_disburse[id_of_a_bettor] # The equivalent of bet_size, but decremented.
+
+        # Each player matches the covered player's stack.
+        side_pot_size = len(copy_to_disburse.values()) * adjusted_amount + dead_money
+
+        if len(those_who_folded) < len(bettors_of_this_size):
+            side_pot = Pot(
+                set(copy_to_disburse.keys()),
+                side_pot_size
+            )
+            right_pots += (side_pot,)
+            dead_money = 0
+        else:
+            # Accumulate this for the next valid side pot.
+            dead_money = side_pot_size
+
+        for id in ids_to_bets:
+            # Remove bettors_of_this_size from copy_to_disburse.
+            # They will no longer participate in any future pots.
+            if(round.players[id] in bettors_of_this_size):
+                copy_to_disburse.pop(id)
+                ids_removed.add(id)
+                continue
+
+            # Skip lower-stacked players
+            elif id in ids_removed:
+                continue
+
+            # Subtract the difference from every remaining player.
+            copy_to_disburse[id] -= adjusted_amount
+
+    pot_queue = update(pot_queue, right_pots=right_pots, ids_to_bets={})
+    round = update(round, pot_queue=pot_queue)
+    print("condition 2")
+    print(ids_to_bets)
+    print(right_pots)
+    return round
+
+def update_pot(round: HoldemRound, amount: float, bettor_id: int) -> HoldemRound:
+    ids_to_bets = round.pot_queue.ids_to_bets
+
+    prev_bet = ids_to_bets.setdefault(bettor_id, 0)
+    ids_to_bets[bettor_id] = prev_bet + amount
+
+    updated_pot_queue = update( \
+        round.pot_queue,
+        ids_to_bets=ids_to_bets,
+        total_amount=round.pot_queue.total_amount + amount
+        )
+    return update(round, pot_queue=updated_pot_queue)
 
 def attempt_bet(round: HoldemRound, player: Player, attempted_amount: int, action: str) -> HoldemRound:
     actual_bet = min(attempted_amount, player.chips)
     updated_chips = player.chips - actual_bet
-    updated_amount_in = player.amount_in + actual_bet
+    updated_amount_in_street = player.amount_in_street + actual_bet
+    updated_amount_in_round = player.amount_in_round + actual_bet
     updated_is_all_in = (updated_chips == 0)
 
-    updated_player = update(player, chips=updated_chips, amount_in=updated_amount_in, is_all_in=updated_is_all_in)
+    updated_player = update( \
+        player, chips=updated_chips, \
+        amount_in_street=updated_amount_in_street, \
+        amount_in_round=updated_amount_in_round, \
+        is_all_in=updated_is_all_in)
 
     round = update_players(round, [updated_player])
-    round = update_pot(round, actual_bet)
+    round = update_pot(round, actual_bet, player.player_id)
 
     return round, actual_bet
 
@@ -413,17 +579,6 @@ def request_action(round: HoldemRound) -> HoldemRound:
     if not action_remains:
         return round
 
-    # Flush players' amounts in at the beginning of each street.
-    updated_players = {}
-    for player in round.players.values():
-        id = player.player_id
-        if player in active_players:
-            updated_players[id] = update(player, amount_in=0)
-            continue
-        updated_players[id] = player
-    round = update(round, players=updated_players)
-
-
     # Get players by position.
 
     players_by_position = {}
@@ -496,10 +651,12 @@ def request_action(round: HoldemRound) -> HoldemRound:
 
         processed, value = interpret_response(response)
 
+                # processed = 'raise'
+        # value = 99999
+
 
         bet_amount = 0
-        has_folded = False
-        is_all_in = False
+
         if(Actions.BET in processed):
             action = Actions.BET
             bet_amount = value
@@ -508,13 +665,14 @@ def request_action(round: HoldemRound) -> HoldemRound:
         elif(Actions.RAISE in processed):
             action = Actions.RAISE
             raise_by = max(value, min_raise)
-            bet_amount = highest_bet + raise_by - player.amount_in
+            bet_amount = highest_bet + raise_by - player.amount_in_street
+            min_raise = raise_by
             acted = set([player.player_id]).union(folded_ids).union(all_in_ids) # Everyone but this player needs to act again.
 
         elif (Actions.CALL in processed):
             # Keep this in for now, for when call unexpectedly fails to yield an all-in...
             action = Actions.CALL
-            bet_amount = highest_bet - player.amount_in
+            bet_amount = highest_bet - player.amount_in_street
 
         elif ("check" in processed):
             action = Actions.CHECK
@@ -522,17 +680,10 @@ def request_action(round: HoldemRound) -> HoldemRound:
 
         else:
             action = Actions.FOLD
-            has_folded = True
             bet_amount = 0
 
             player = update(player, has_folded=True)
             round = update_players(round, [player])
-            # Remove player from pot.
-            pot_player_ids_copy = round.pot.player_ids
-
-            pot_player_ids_copy.remove(player.player_id)
-            pot = update(round.pot, player_ids=pot_player_ids_copy)
-            round = update(round, pot=pot)
             folded_ids.add(player.player_id)
 
         if(bet_amount > 0):
@@ -541,7 +692,7 @@ def request_action(round: HoldemRound) -> HoldemRound:
 
         acted.add(player.player_id)
 
-        highest_bet = max(highest_bet, player.amount_in)
+        highest_bet = max(highest_bet, player.amount_in_street)
 
         next_id = player.next_id
 
@@ -557,11 +708,16 @@ def request_action(round: HoldemRound) -> HoldemRound:
         round = log_action( \
             round=round, 
             action=action, 
-            typed_object=bet_amount, 
+            typed_object=bet_amount if action != Actions.RAISE else player.amount_in_street, 
             subject_id=player.player_id
             )
 
+        print(f'{round.players[curr_id]} has ${player.chips} in chips left after the end of this action')
         curr_id = next_id
+
+        stack_sanity_check(round)
+
+
     return round
 
 def has_folded_out_(round: HoldemRound) -> bool:
@@ -572,69 +728,104 @@ def has_folded_out_(round: HoldemRound) -> bool:
     
 
 def settle_pot(round: HoldemRound, folded_out=False):
-    pot = round.pot
+    pot = round.pot_queue
 
     if(folded_out):
         winner = [p for p in round.players.values() if not p.has_folded]
         player = winner[0]
-        player = update(player, chips=player.chips + pot.amount)
-        update_players(round, [player])
+        player = update(player, chips=player.chips + pot.total_amount)
+        round = update_players(round, [player])
         round = log_action(
             round=round,
             action=Actions.COLLECT,
-            typed_object=pot.amount,
+            typed_object=pot.total_amount,
             subject_id=player.player_id
         )
         return round
 
 
-    iteration = 0
-    shown_players = set()
-    while(pot != None):
-        # TODO: Figure out the logic of side pots.
-        candidates = [round.players[id] for id in pot.player_ids]
-        winning_hands = Hand.find_winners(candidates, round.community_cards)
+    right_pots = pot.right_pots
+    shown_ids = set()
+    pot_number = -1
+    first_pot_was_uncalled = False
+    while(len(right_pots) > 0):
+        pot_number += 1
+        current_pot = right_pots[-1]
+        right_pots = right_pots[:-1]
 
-        amount_per_winner = round_(pot.amount/len(winning_hands), 2)
+        candidates = [round.players[id] for id in current_pot.ids_involved \
+            if not round.players[id].has_folded]
 
-        for hand in winning_hands:
-            player = hand.player
+        if(len(candidates) == 1 and (pot_number == 0)):
+            # Uncalled
+            first_pot_was_uncalled = True
 
-            if(player.player_id in shown_players):
-                # Skip players who already won a pot, when side pot exists.
+            if(current_pot.amount == 0):
                 continue
 
-            shown_players.add(player.player_id)
+            player = update(candidates[0], chips=candidates[0].chips + current_pot.amount)
+            round = update_players(round, [player])
+            round = log_action(round, Actions.RETURN, current_pot.amount, subject_id=candidates[0].player_id)
+            continue
 
-            round = log_action( \
-                round=round,
-                action=Actions.SHOW,
-                typed_object=player.hole_cards,
-                object=f"{player.hole_cards} ({hand.hand_id})",
-                subject_id=player.player_id
-            )
-
+        winning_hands = Hand.find_winners(candidates, round.community_cards)
+        amount_per_winner = current_pot.amount/len(winning_hands)
+        
         for hand in winning_hands:
-            action = Actions.COLLECT if (iteration == 0) else Actions.COLLECT_SIDE
+            player = hand.player
+            if(player in shown_ids):
+                continue
+            player = hand.player
+            round = log_action(round, Actions.SHOW, player.hole_cards, \
+                    object=f"{player.hole_cards} ({hand.hand_id})", subject_id=player.player_id)
+            shown_ids.add(player.player_id)
+        
+        for hand in winning_hands:
             player = hand.player
             player = update(player, chips=player.chips + amount_per_winner)
-            update_players(round, [player])
-            round = log_action(
-                round=round,
-                action=action,
-                typed_object=amount_per_winner,
-                subject_id=player.player_id
-            )
+            round = update_players(round, [player])
 
-        pot = pot.parent_pot
-        iteration += 1
-        round = update(round, pot=pot)
+            action = Actions.COLLECT_SIDE
+
+            if (pot_number == 0 and (not first_pot_was_uncalled)) or \
+            pot_number == 1 and first_pot_was_uncalled:
+                action = Actions.COLLECT
+
+            round = log_action(round, action, amount_per_winner, subject_id=player.player_id)
     return round
+
+def remove_empty_stacks(round:HoldemRound) -> HoldemRound:
+    updated_players = {}
+    for player in round.players.values():
+        if(player.chips == 0):
+            round = log_action(round=round, action=Actions.EXIT, typed_object=None, subject_id=player.player_id)
+            continue
+        updated_players[player.player_id] = player
+    return update(round, players=updated_players)
+
+def stack_sanity_check(round: HoldemRound):
+    sum = 0
+    for player in round.players.values():
+        sum += player.chips
+    
+    sum += round.pot_queue.total_amount
+    expected = HoldemRound.MAX_BUY_IN*6
+    if(sum == expected):
+        return
+
+    print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    log_string = build_log(round)
+    print(log_string)
+    print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    print(f"Warning. Expected {expected} but got {sum}.")
+    # exit()
+
 
 def play_round(round: HoldemRound) -> HoldemRound:
     # Shuffle deck.
     round = update(round, phase=Phases.GAME_START)
-    round = init_rand(round)
+    # seed=1774796861768377 <- good one for quick testing
+    round = init_rand(round, seed=1774796861768377)
     button_index = 0
     round = refresh_players(round)
     deck = shuffle(Deck.generate_deck())
@@ -660,13 +851,24 @@ def play_round(round: HoldemRound) -> HoldemRound:
 
         round = request_action(round)
 
-        has_folded = has_folded_out_(round)
+        # Flush players' amounts in at the end of each street.
+        updated_players = {}
+        for player in round.players.values():
+            id = player.player_id
+            updated_players[id] = update(player, amount_in_street=0)
+            continue
+        round = update(round, players=updated_players)
 
-        if(has_folded):
+        has_folded_out = has_folded_out_(round)
+        
+
+        if has_folded_out:
             round = update(round, phase=Phases.RESULT)
             round = settle_pot(round, folded_out=True)
-    
-        return round, deck, has_folded
+
+        round = right_pot(round)    
+
+        return round, deck, has_folded_out
 
     round, deck, has_folded_out = play_street(round, deck, Phases.PREFLOP, cards_to_pop=0)
     if(has_folded_out): return round
@@ -683,6 +885,8 @@ def play_round(round: HoldemRound) -> HoldemRound:
     round = update(round, phase=Phases.SHOWDOWN)
     round = settle_pot(round, folded_out=False)
     
+    round = remove_empty_stacks(round)
+
     
     log_string = build_log(round)
     print(log_string)

@@ -1,10 +1,11 @@
 import yaml
 from datetime import datetime
 
-from game_structs import Personality, Player, HoldemRound, Pot
+from game_structs import Personality, Player, HoldemRound, PotQueue
 from game_logic import play_round
 from constants import Positions, Phases
 
+import random
 from utils import shuffle, get_time, update
 
 def load_personalities(filename: str):
@@ -36,8 +37,10 @@ def init_players(personalities: list[Personality]) -> list[Player]:
                 position=Positions.NONE,
                 personality=personality,
                 hole_cards=[],
+                # chips=random.choice([21, 27, 35]),
                 chips=HoldemRound.MAX_BUY_IN,
-                amount_in=0,
+                amount_in_street=0,
+                amount_in_round=0,
                 has_folded=False,
                 is_all_in=False,
                 prev_id=-1,
@@ -46,10 +49,18 @@ def init_players(personalities: list[Personality]) -> list[Player]:
             players.append(p)
         return players
 
-def select_players(options: str, count=6) -> dict[int, Player]:
+def select_players(options: list[Player], count=6, ids:list[int]|None=None) -> dict[int, Player]:
+    selected_players = {}
+
+    if ids != None:
+        ids_set = set(ids)
+        for player in options:
+            if(player.player_id in ids_set):
+                selected_players[player.player_id] = player
+
+        return selected_players
     shuffle(options)
 
-    selected_players = {}
 
     for i in range(count):
         player = options[i]
@@ -58,13 +69,6 @@ def select_players(options: str, count=6) -> dict[int, Player]:
 
     return selected_players
 
-def remove_empty_stacks(round:HoldemRound) -> HoldemRound:
-    updated_players = {}
-    for player in round.players.values():
-        if(player.chips == 0):
-            continue
-        updated_players[player.player_id] = player
-    return update(round, players=updated_players)
 
 def trim_action_list(round: HoldemRound) -> HoldemRound:
     action_list_trimmed = round.actions[40:] if len(round.actions) > 40 else round.actions
@@ -78,19 +82,19 @@ def populate_seats(round: HoldemRound) -> HoldemRound:
 if __name__ == "__main__":
     personalities = load_personalities('characters.yaml')
     player_pool = init_players(personalities)
-    players = select_players(player_pool)
+    players = select_players(player_pool, ids=[3, 2, 11, 6, 1, 14])
 
-    empty_pot = Pot(
-            set(players.keys()),
-            0,
-            None
-         )
+    empty_queue = PotQueue(
+        ids_to_bets={},
+        total_amount=0,
+        right_pots=[]
+    )
 
     round = HoldemRound(
         phase = Phases.GAME_START,
         round_id = 0,
         time = get_time(),
-        pot = empty_pot,
+        pot_queue=empty_queue,
         actions = [],
         players = players,
         seats = [],
@@ -106,11 +110,10 @@ if __name__ == "__main__":
             surplus = len(actions)-30
             round = update(round, actions=actions[surplus:])
 
-        # Update the empty pot with all the remaining players in round
-        empty_pot = update(empty_pot, player_ids=set(round.players.keys()))
+        # Refresh pot
+        empty_queue = update(empty_queue, ids_to_bets={}, total_amount=0, right_pots=[])
 
-        round = update(round, pot=empty_pot, community_cards=[], round_id=round.round_id+1)
+        round = update(round, pot_queue=empty_queue, community_cards=[], round_id=round.round_id+1)
         round = play_round(round)
-        round = remove_empty_stacks(round)
         round = trim_action_list(round)
 

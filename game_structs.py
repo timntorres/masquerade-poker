@@ -28,7 +28,10 @@ class Player:
 
     hole_cards: Tuple[str]
     chips: float
-    amount_in: float
+    # For calculating bet sizes
+    amount_in_street: float
+    # For calculating all-in stack size
+    amount_in_round: float
 
     has_folded: bool
     is_all_in: bool
@@ -43,10 +46,20 @@ class Player:
         return self.name
 
 @dataclass(frozen=True)
-class Pot:
-    player_ids: Set[int]
+class Pot: 
+    ids_involved: Set[int]
     amount: float
-    parent_pot: Optional['Pot'] = field(default=None)
+
+@dataclass(frozen=True)
+class PotQueue:
+    # A key insight is that side pots only ever matter when a non stack-leader is all-in.
+    # Once that player is all-in, the amount that player can win is now capped.
+    # This means side pots only ever matter when the short-stacked, all-in player wins the hand.
+    # Another core principle is to model the behavior and timing after what actual human Dealers do.
+
+    ids_to_bets: Dict[int, float]
+    total_amount: float
+    right_pots: Tuple[Pot]
 
 T = TypeVar("T")
 
@@ -55,7 +68,7 @@ class Snapshot(Generic[T]):
     typed_object: T
     phase: str
     round_id: int
-    pot: Pot
+    pot_queue: PotQueue
     community_cards: Tuple[str]
     players: Dict[int, Player]
     time: datetime
@@ -118,7 +131,7 @@ class HoldemRound:
     phase: str
     round_id: int
     time: datetime
-    pot: Pot
+    pot_queue: PotQueue
     actions: List[Action]
     
     players: Dict[int, Player]

@@ -58,6 +58,7 @@ class Actions:
     RETURN: ClassVar[str] = 'return'
     SHOW: ClassVar[str] = 'show'
     FLIP: ClassVar[str] = 'flip'
+    EXIT: ClassVar[str] = 'exit'
 
     DOESNT_ADD_S: ClassVar[set] = set([DEALT])
     MONEY_INVOLVED: ClassVar[set] = set([POST, BET, RAISE, CALL])
@@ -80,5 +81,6 @@ class Actions:
         COLLECT_SIDE: f'{Grammar.SUBJECT} collects ${Grammar.OBJECT} from side pot.',
         RETURN: f'${Grammar.OBJECT}, un-called, returns to {Grammar.SUBJECT}.',
         SHOW: f'{Grammar.SUBJECT} shows {Grammar.OBJECT}.',
-        FLIP: f'{Grammar.SUBJECT} flips {Grammar.OBJECT}.'
+        FLIP: f'{Grammar.SUBJECT} flips {Grammar.OBJECT}.',
+        EXIT: f'{Grammar.SUBJECT} exits the table.'
     }
