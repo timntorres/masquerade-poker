@@ -28,31 +28,34 @@
     }
 
     .rank {
+        position: absolute;
+        opacity: .9;
+        top: -2cqw;
+        left: 7cqw;
+        font-size: 80cqw;
         font-family: 'Apple SD Gothic Neo';
-        font-size: 42px;
         font-weight: 900;
-        margin-top: 7px;
-        margin-left: 2px;
-        margin-bottom:16px;
-        letter-spacing: -2px;
+        letter-spacing: -5cqw;
     }
     .suit {
-        justify-content: left;
-        font-size: 70px;
+        opacity: .45;
+        position: absolute;
+        bottom: -50cqw;
+        right: -50cqw;
+        font-size: 120cqw;
         font-family: 'Klee';
-        margin-left: 5px;
 
     }
     .card {
-        width: 64px;
+        position: relative;
+        container-type: size;
+        
         height: 90px;
-        border-radius: 7px;
+        aspect-ratio: 64/90;
+
+        border-radius: 11%;
         background-color: #ffffff;
 
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: left;
         overflow:hidden;
 
     }
