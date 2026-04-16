@@ -16,7 +16,7 @@ class Personality:
     quotes: Tuple[str]
 
     def __post_init__(self):
-        object.__setattr__(self, "quotes", tuple(self.traits))
+        object.__setattr__(self, "quotes", tuple(self.quotes))
         
 
 @dataclass(frozen=True)
@@ -47,7 +47,7 @@ class Player:
 
 @dataclass(frozen=True)
 class Pot: 
-    ids_involved: Set[int]
+    ids_involved: List[int]
     amount: float
 
 @dataclass(frozen=True)
@@ -130,6 +130,7 @@ class HoldemRound:
 
     phase: str
     round_id: int
+    date: datetime
     time: datetime
     pot_queue: PotQueue
     actions: List[Action]

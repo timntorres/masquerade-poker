@@ -6,7 +6,7 @@ from game_logic import play_round
 from constants import Positions, Phases
 
 import random
-from utils import shuffle, get_time, update
+from utils import shuffle, get_date, get_time, update
 
 def load_personalities(filename: str):
     with open(filename, 'r') as file:
@@ -22,6 +22,7 @@ def load_personalities(filename: str):
                     character['playstyle'],
                     character['quotes']
                 )
+                
                 personalities.append(p)
             return personalities
         except yaml.YAMLError as exc:
@@ -84,6 +85,9 @@ if __name__ == "__main__":
     player_pool = init_players(personalities)
     players = select_players(player_pool, ids=[3, 2, 11, 6, 1, 14])
 
+    for p in players:
+        player = players[p]
+
     empty_queue = PotQueue(
         ids_to_bets={},
         total_amount=0,
@@ -93,6 +97,7 @@ if __name__ == "__main__":
     round = HoldemRound(
         phase = Phases.GAME_START,
         round_id = 0,
+        date = get_date(),
         time = get_time(),
         pot_queue=empty_queue,
         actions = [],

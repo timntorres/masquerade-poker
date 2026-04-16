@@ -3,6 +3,7 @@ from game_structs import HoldemRound, Action, Player, Snapshot, T, Pot, PotQueue
 from constants import Phases, Actions, Positions, Subjects
 from deck import Deck, Hand, Card
 from utils import init_rand, shuffle, get_time, update
+from game_save import save_game
 
 import anthropic
 
@@ -11,6 +12,7 @@ import math
 round_ = round # fml for naming the HoldemRound instance round
 import time
 import copy
+
 
 def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest_bet: float, min_raise: float) -> str:
         """
@@ -98,6 +100,7 @@ Choose from the following responses:
 {ending}"""
 
 
+
 def build_log(round: HoldemRound, perspective: Player | None = None) -> str:
     log_string = ""
     prev_phase = ""
@@ -172,7 +175,10 @@ def log_action(round: HoldemRound, action: str, typed_object: T, object: str | N
     action_list = round.actions
     action_list.append(new_action)
 
-    return update(round, actions=action_list)
+    round = update(round, actions=action_list)
+    save_game(round)
+
+    return round
 
 def init_rand(round, seed=None):
     if(seed == None):
@@ -314,7 +320,7 @@ def right_pot(round: HoldemRound) -> HoldemRound:
 
     if all_same_bet_size:
         main_pot = right_pots[-1]
-        main_pot = update(main_pot, ids_involved=ids_to_bets.keys(), amount=main_pot.amount + amount_this_street)
+        main_pot = update(main_pot, ids_involved=list(ids_to_bets.keys()), amount=main_pot.amount + amount_this_street)
 
         tuple_to_concatenate = (main_pot,)
         if condition_1_met:
@@ -383,7 +389,7 @@ def right_pot(round: HoldemRound) -> HoldemRound:
 
         if len(those_who_folded) < len(bettors_of_this_size):
             side_pot = Pot(
-                set(copy_to_disburse.keys()),
+                list(copy_to_disburse.keys()),
                 side_pot_size
             )
             right_pots += (side_pot,)
