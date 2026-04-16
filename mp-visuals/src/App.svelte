@@ -41,7 +41,10 @@
   <div class="seat p4">P4</div>
 
   <div class="seat p2">P2</div>
-  <div class="board">Board</div>
+  <div class="board">
+    <CardTest />
+
+  </div>
   <div class="seat p5">P5</div>
 
   <div class="seat p1">P1</div>
