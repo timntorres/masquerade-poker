@@ -38,17 +38,27 @@
   <div class="seat p3">
     <PlayerDisplay {player}/>
   </div>
-  <div class="seat p4">P4</div>
+  <div class="seat p4">
+    <PlayerDisplay {player}/>
+  </div>
 
-  <div class="seat p2">P2</div>
+  <div class="seat p2">
+    <PlayerDisplay {player}/>
+  </div>
   <div class="board">
-    <CardTest />
+    <!--<CardTest />-->
 
   </div>
-  <div class="seat p5">P5</div>
+  <div class="seat p5">
+    <PlayerDisplay {player}/>
+  </div>
 
-  <div class="seat p1">P1</div>
-  <div class="seat p6">P6</div>
+  <div class="seat p1">
+    <PlayerDisplay {player}/>
+  </div>
+  <div class="seat p6">
+    <PlayerDisplay {player}/>
+  </div>
 
   <div class="dialogue">Dialogue</div>
 </div>
@@ -71,7 +81,7 @@
   grid-template-rows: repeat(12, 1fr);
 
   background: #222;
-  gap: .25cqw;
+  gap: 2cqw;
 }
 
 /* Top players */
@@ -121,13 +131,20 @@
 }
 
 .seat, .board, .dialogue {
-  
-  background: #000;
-  border: 2px solid #444;
+  overflow: hidden;
+  position: relative;
   color: white;
   display: flex;
   align-items: top;
   justify-content: right;
+}
+
+.seat {
+  border-radius: 10%;
+}
+
+.board, .dialogue {
+  border: 1px solid #000;
 }
 
 </style>

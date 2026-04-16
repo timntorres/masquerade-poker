@@ -40,7 +40,6 @@
 
     }
     .card {
-
         position: relative;
         container-type: size;
         

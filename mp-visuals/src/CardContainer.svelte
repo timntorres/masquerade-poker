@@ -16,8 +16,9 @@
 
 <style>
     .row {        
+        position:absolute;
         align-items: flex-end;
-        height:100%;
+        height: 13cqw;
         display: flex;
         
         gap: .4cqw;

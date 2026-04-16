@@ -5,6 +5,7 @@
 
     let { player }: { player: Player } = $props();
     let chips = $derived(player.chips);
+    let name = $derived(player.name);
 
 
 
@@ -18,6 +19,12 @@
     ${chips.toFixed(2)}
 </div>
 
+<div class="overlay">
+</div>
+
+<div class="name">
+    {name}
+</div>
 
 
 <style>
@@ -29,16 +36,34 @@
 
         padding-right: 0.5cqw;
 
-        font-size: 3.5cqw;
+        font-size: 3cqw;
     }
 
     .icon {
         position: absolute;
         background-color:blue;
-        height: 13cqw;
+        height: 11.5cqw;
         aspect-ratio: 1;
         margin-right: 11cqw;
         border-radius: 50%;
+    }
+
+    .overlay {
+        position:relative;
+        width:100%;
+        opacity: .8;
+        background-image: linear-gradient(transparent, transparent, transparent, black);
+    }
+
+    .name {
+        left: 0;
+        font-family: 'Apple SD Gothic Neo';
+        text-align: left;
+        font-size: 2.2cqw;
+        font-weight: 300;
+        position:absolute;
+        margin-left: 1cqw;
+        margin-top: 10cqw;
     }
 
 </style>
