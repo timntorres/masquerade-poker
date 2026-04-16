@@ -4,6 +4,7 @@
   import heroImg from './assets/hero.png'
 
   import PlayerDisplay from './Player.svelte'
+  import Dialogue from './Dialogue.svelte'
 
   import type { Player, Card } from './interfaces'
   import { RANK_SHORTHAND, SUIT_SHORTHAND } from './consts'
@@ -13,14 +14,16 @@
   import { SUITS } from './consts'
   import { readable } from 'svelte/store';
 
+  import CardTest from './CardTest.svelte'
+
   let hole_cards: [Card, Card] = [
     {
       rank: 2,
-      suit: 'h',
+      suit: 'd',
     },
     {
-      rank: 2,
-      suit: 'c',
+      rank: 7,
+      suit: 's',
     }
   ]
 
@@ -50,7 +53,7 @@
 
   let player: Player = {
     id: 0,
-    name: "Test Name",
+    name: "TEST NAME",
     chips: 100,
     position: "HJ",
     hole_cards: hole_cards,
@@ -59,6 +62,11 @@
 </script>
 
 <div class="container">
+
+
+    <div class="table">
+    </div>
+
   <div class="seat p3">
     <PlayerDisplay {player}/>
   </div>
@@ -85,8 +93,13 @@
     <PlayerDisplay {player}/>
   </div>
 
-  <div class="dialogue">Dialogue</div>
+  <div class="dialoguebox">
+    <Dialogue dialogue={ "This is a dialogue test." }/>
+  </div>
 </div>
+
+
+<CardTest />
 
 
 
@@ -94,6 +107,7 @@
 <style>
 
 .container {
+  position: relative;
   container-type: size;
   display: grid;
   width: 100%;
@@ -150,12 +164,19 @@
 }
 
 /* Bottom dialogue (offset & centered) */
-.dialogue {
+.dialoguebox {
+
+  background-color: rgba(0, 0, 0, 0.7);
+  opacity: .99;
+  border-radius: 2cqw 2cqw 0cqw 0cqw;
+
   grid-column: 3 / 11;
   grid-row: 9 / -1;
 }
 
-.seat, .board, .dialogue {
+
+
+.seat, .board {
   overflow: hidden;
   position: relative;
   color: white;
@@ -168,8 +189,21 @@
   border-radius: 10%;
 }
 
-.board, .dialogue {
-  border: 1px solid #000;
+
+.table {
+  position:absolute;
+  left: 20cqw;
+  top: 20cqh;
+  width:60cqw;
+  height:55cqh;
+  align-items: center;
+  background-color: #411;
+  border-radius: 30%;
+
+  box-sizing: border-box;
+  border-width: 2cqw;
+  border-style: solid;
+  border-color: #611;
 }
 
 </style>

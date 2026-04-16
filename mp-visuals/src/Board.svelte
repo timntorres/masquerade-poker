@@ -9,50 +9,62 @@
     <div class="container">
         <!-- Seat 1 -->
         <div class="betlocation a">
-            test
+            <div class="bet">
+                $0.00
+            </div>
         </div>
         <div class="btnlocation b">
-            test
+            B
         </div>
 
         <!-- Seat 2 -->
         <div class="btnlocation c">
-            test
+            B
         </div>
         <div class="betlocation d">
-            test
+            <div class="bet">
+                $0.00
+            </div>
         </div>
 
         <!-- Seat 3 -->
         <div class="btnlocation e">
-            test
+            B
         </div>
         <div class="betlocation f">
-            test
+            <div class="bet">
+                $0.00
+            </div>
         </div>
         
         <!-- Seat 4 -->
         <div class="btnlocation g">
-            test
+            B
         </div>
         <div class="betlocation h">
-            test
+            <div class="bet">
+                $0.00
+            </div>
         </div>
 
         <!-- Seat 5 -->
-        <div class="betlocation i">
-            test
+        <div class="betlocation rightalign i">
+            <div class="bet">
+                $0.00
+            </div>
         </div>
         <div class="btnlocation j">
-            test
+            B
         </div>
 
         <!-- Seat 6 -->
         <div class="btnlocation k">
-            test
+            B
         </div>
-        <div class="betlocation l">
-            test
+        <div class="betlocation rightalign l">
+            <div class="bet">
+                $0.00
+            </div>
         </div>
         
 
@@ -124,13 +136,34 @@
         grid-area: 6 / 1 / 7 / 2;
     }
 
-    .betlocation {
+    .bet {
+        position:absolute;
+        font-family: 'Apple SD Gothic Neo';
+        font-size: 2cqw;
+        font-weight: 200;
+        letter-spacing: -.15cqw;
+    }
 
-        background-color: red;
+    .betlocation {
+        position:relative;
     }
 
     .btnlocation {
-        background-color: blue;
+        background-image: linear-gradient(white, lightgray);
+        border-style: solid;
+        border-width: 0.5cqw;
+        justify-content: center;
+        text-align: center;
+
+        box-sizing: border-box;
+        width: 3cqw;
+        height: 3cqw;
+        border-radius: 50%;
+        border-color: white;
+        color: darkslategray;
+        font-family: 'Apple SD Gothic Neo';
+        font-size: 2cqw;
+        font-weight: 900;
     }
 
     .container {
@@ -155,6 +188,13 @@
         font-weight: 500;
 
     }
+
+    .rightalign {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
 
 
 </style>

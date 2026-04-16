@@ -25,17 +25,17 @@
         opacity: .9;
         top: -2cqw;
         left: 7cqw;
-        font-size: 80cqw;
+        font-size: 60cqw;
         font-family: 'Apple SD Gothic Neo';
         font-weight: 900;
         letter-spacing: -5cqw;
     }
     .suit {
-        opacity: .45;
+        opacity: .7;
         position: absolute;
-        bottom: -50cqw;
-        right: -50cqw;
-        font-size: 120cqw;
+        bottom: -25cqw;
+        right: -15cqw;
+        font-size: 100cqw;
         font-family: 'Klee';
 
     }

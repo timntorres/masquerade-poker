@@ -13,14 +13,17 @@
 
 <div class="icon"></div>
 
-<CardContainer cards={ player.hole_cards } />
+<div class="cardtranslator">
+    <CardContainer cards={ player.hole_cards } />
+</div>
+
+<div class="overlay">
+</div>
 
 <div class="chipdisplay">
     ${chips.toFixed(2)}
 </div>
 
-<div class="overlay">
-</div>
 
 <div class="name">
     {name}
@@ -34,6 +37,8 @@
         font-weight: 100;
         letter-spacing: -.3cqw;
 
+        margin-top: 9.1cqw;
+
         padding-right: 0.5cqw;
 
         font-size: 3cqw;
@@ -41,7 +46,7 @@
 
     .icon {
         position: absolute;
-        background-color:blue;
+        background-color: #111;
         height: 11.5cqw;
         aspect-ratio: 1;
         margin-right: 11cqw;
@@ -59,11 +64,17 @@
         left: 0;
         font-family: 'Apple SD Gothic Neo';
         text-align: left;
-        font-size: 2.2cqw;
-        font-weight: 300;
+        font-size: 1.8cqw;
+        font-weight: 700;
         position:absolute;
         margin-left: 1cqw;
         margin-top: 10cqw;
+    }
+
+    .cardtranslator{
+        position:absolute;
+        left: 9cqw;
+        top: -1cqh;
     }
 
 </style>
