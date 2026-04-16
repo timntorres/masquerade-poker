@@ -8,7 +8,7 @@
   import type { Player, Card } from './interfaces'
   import { RANK_SHORTHAND, SUIT_SHORTHAND } from './consts'
 
-  import CardTest from './CardTest.svelte'
+  import Board from './Board.svelte'
 
   import { SUITS } from './consts'
   import { readable } from 'svelte/store';
@@ -22,6 +22,30 @@
       rank: 2,
       suit: 'c',
     }
+  ]
+
+  let community_cards: [Card, Card, Card, Card, Card] = [
+    {
+      rank: 't',
+      suit: 'h',
+    },
+    {
+      rank: 'j',
+      suit: 'h',
+    },
+    {
+      rank: 'k',
+      suit: 'h',
+    },
+    {
+      rank: 'q',
+      suit: 'h',
+    },
+    {
+      rank: 'a',
+      suit: 'h',
+    },
+
   ]
 
   let player: Player = {
@@ -46,6 +70,7 @@
     <PlayerDisplay {player}/>
   </div>
   <div class="board">
+    <Board {community_cards} pot={569} />
     <!--<CardTest />-->
 
   </div>
