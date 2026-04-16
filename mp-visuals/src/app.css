@@ -30,3 +30,15 @@
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
   }
 }
+
+@font-face {
+  font-family: "Klee";
+  src: url("KleeOne-Regular.ttf") format(ttf);
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Apple SD Gothic Neo";
+  src: url("AppleSDGothicNeo.ttc") format(ttc);
+  font-display: swap;
+}

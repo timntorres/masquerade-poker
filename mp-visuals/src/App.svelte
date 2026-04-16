@@ -1,25 +1,43 @@
-<script>
+<script lang="ts">
   import svelteLogo from './assets/svelte.svg'
   import viteLogo from './assets/vite.svg'
   import heroImg from './assets/hero.png'
 
-  import Card from './Card.svelte'
+  import PlayerDisplay from './Player.svelte'
 
-  import { SUITS } from './suits'
+  import type { Player, Card } from './interfaces'
+  import { RANK_SHORTHAND, SUIT_SHORTHAND } from './consts'
+
+  import CardTest from './CardTest.svelte'
+
+  import { SUITS } from './consts'
   import { readable } from 'svelte/store';
 
-  const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-  const suits = [
-    SUITS.HEART,
-    SUITS.CLUB,
-    SUITS.SPADE,
-    SUITS.DIAMOND
-  ];
+  let hole_cards: [Card, Card] = [
+    {
+      rank: 2,
+      suit: 'h',
+    },
+    {
+      rank: 2,
+      suit: 'c',
+    }
+  ]
+
+  let player: Player = {
+    id: 0,
+    name: "Test Name",
+    chips: 100,
+    position: "HJ",
+    hole_cards: hole_cards,
+  }
 
 </script>
 
 <div class="container">
-  <div class="seat p3">P3</div>
+  <div class="seat p3">
+    <PlayerDisplay {player}/>
+  </div>
   <div class="seat p4">P4</div>
 
   <div class="seat p2">P2</div>
@@ -32,33 +50,25 @@
   <div class="dialogue">Dialogue</div>
 </div>
 
-<section id="center">
 
-<div class="grid">
-  {#each ranks as rank}
-    <div class="row">
-      {#each suits as suit}
-        <Card {rank} {suit} />
-      {/each}
-    </div>
-  {/each}
-</div>
+
 
 <style>
 
 .container {
+  container-type: size;
   display: grid;
   width: 100%;
   max-width: 1920px;
-  height: 1080px;
+  aspect-ratio: 16/9;
   margin: 0 auto;
 
   /* More columns = more control */
   grid-template-columns: repeat(12, 1fr);
   grid-template-rows: repeat(12, 1fr);
 
-  gap: 8px;
   background: #222;
+  gap: .25cqw;
 }
 
 /* Top players */
@@ -96,6 +106,7 @@
 
 /* Center board */
 .board {
+
   grid-column: 4 / 10;
   grid-row: 4 / 9;
 }
@@ -107,28 +118,17 @@
 }
 
 .seat, .board, .dialogue {
+  
   background: #000;
   border: 2px solid #444;
   color: white;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: top;
+  justify-content: right;
 }
 
-  .grid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .row {
-    display: flex;
-    gap: 8px;
-  }
 </style>
 
-
-</section>
 
 <div class="ticks"></div>
 

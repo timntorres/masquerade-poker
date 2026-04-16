@@ -1,31 +1,24 @@
 
 
 <script lang="ts">
-  import { SUITS, SUIT_SYMBOLS, SUIT_COLORS } from './suits';
+  import { SUIT_SHORTHAND, RANK_SHORTHAND, SUIT_SYMBOLS, SUIT_COLORS } from './consts';
 
-  type Suit = keyof typeof SUITS;
+  let { rank, suit }: { rank: keyof typeof RANK_SHORTHAND; suit: keyof typeof SUIT_SHORTHAND } = $props();
+  
+  let suit_ = $derived(SUIT_SHORTHAND[suit]);
+  let rank_ = $derived(RANK_SHORTHAND[rank]);
 
-  let { rank, suit }: { rank: string; suit: Suit } = $props();
+  let color = $derived(SUIT_COLORS[suit_]);
+  let symbol = $derived(SUIT_SYMBOLS[suit_]);
+
 </script>
 
-<div class="card" style="color: {SUIT_COLORS[suit]}">
-  <div class="rank">{rank}</div>
-  <div class="suit">{SUIT_SYMBOLS[suit]}</div>
+<div class="card" style="color: { color }">
+  <div class="rank">{ rank_ }</div>
+  <div class="suit">{ symbol }</div>
 </div>
 
 <style>
-
-    @font-face{
-        font-family: 'Klee';
-        src: url('KleeOne-Regular.ttf') format(ttf);
-        font-display: swap;
-    }
-
-    @font-face{
-        font-family: 'Apple SD Gothic Neo';
-        src: url('AppleSDGothicNeo.ttc') format(ttc);
-        font-display: swap;
-    }
 
     .rank {
         position: absolute;
@@ -47,10 +40,11 @@
 
     }
     .card {
+
         position: relative;
         container-type: size;
         
-        height: 90px;
+        height: 9.5cqw;
         aspect-ratio: 64/90;
 
         border-radius: 11%;

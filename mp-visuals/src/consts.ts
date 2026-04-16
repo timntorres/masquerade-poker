@@ -18,3 +18,26 @@ export const SUIT_COLORS = {
   DIAMOND: "#0027FF",
   CLUB: "#08A000",
 } as const;
+
+export const SUIT_SHORTHAND = {
+  s: "SPADE",
+  h: "HEART",
+  d: "DIAMOND",
+  c: "CLUB",
+} as const;
+
+export const RANK_SHORTHAND = {
+  2: "2",
+  3: "3",
+  4: "4",
+  5: "5",
+  6: "6",
+  7: "7",
+  8: "8",
+  9: "9",
+  t: "10",
+  j: "J",
+  q: "Q",
+  k: "K",
+  a: "A",
+} as const;
