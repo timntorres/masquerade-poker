@@ -1,0 +1,80 @@
+<script lang="ts">
+    import CardContainer from './CardContainer.svelte';
+    import type { Player } from './interfaces';
+
+    let { player }: { player: Player } = $props();
+    let chips = $derived(player.chips);
+    let name = $derived(player.name);
+
+
+
+</script>
+
+<div class="icon"></div>
+
+<div class="cardtranslator">
+    <CardContainer cards={ player.hole_cards } />
+</div>
+
+<div class="overlay">
+</div>
+
+<div class="chipdisplay">
+    ${chips.toFixed(2)}
+</div>
+
+
+<div class="name">
+    {name}
+</div>
+
+
+<style>
+    .chipdisplay {
+        position: absolute;
+        font-family: 'Apple SD Gothic Neo';
+        font-weight: 100;
+        letter-spacing: -.3cqw;
+
+        margin-top: 9.1cqw;
+
+        padding-right: 0.5cqw;
+
+        font-size: 3cqw;
+    }
+
+    .icon {
+        position: absolute;
+        background-color: #111;
+        height: 11.5cqw;
+        aspect-ratio: 1;
+        margin-right: 11cqw;
+        border-radius: 50%;
+    }
+
+    .overlay {
+        position:relative;
+        width:100%;
+        opacity: .8;
+        background-image: linear-gradient(transparent, transparent, transparent, black);
+    }
+
+    .name {
+        left: 0;
+        font-family: 'Apple SD Gothic Neo';
+        text-align: left;
+        font-size: 1.8cqw;
+        font-weight: 700;
+        position:absolute;
+        margin-left: 1cqw;
+        margin-top: 10cqw;
+    }
+
+    .cardtranslator{
+        position:absolute;
+        left: 9cqw;
+        top: -1cqh;
+    }
+
+</style>
+
