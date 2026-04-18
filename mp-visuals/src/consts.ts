@@ -41,3 +41,51 @@ export const RANK_SHORTHAND = {
   k: "K",
   a: "A",
 } as const;
+
+export const POSITIONS = {
+  BTN: "BTN",
+  SB: "SB",
+  BB: "BB",
+  UTG: "UTG",
+  HJ: "HJ",
+  CO: "CO",
+  NONE: "",
+};
+
+export const PHASES = {
+  GAME_START: "game start",
+  PREFLOP: "preflop",
+  FLOP: "flop",
+  TURN: "turn",
+  RIVER: "river",
+  RESULT: "result",
+  SHOWDOWN: "showdown",
+  GAME_END: "game end",
+};
+
+export const SUBJECTS = {
+  DEALER: "Dealer",
+  PLAYER: "Player",
+};
+
+export const ACTIONS = {
+  SHUFFLE: "shuffle",
+  CHECK: "check",
+  CALL: "call",
+  BET: "bet",
+  RAISE: "raise",
+  FOLD: "fold",
+  SAY: "say",
+  THINK: "think",
+  WIN: "win",
+  POST: "post",
+  IS_POSITION: "is position",
+  BUY: "buy",
+  DEALT: "is dealt",
+  COLLECT: "collect",
+  COLLECT_SIDE: "collect side",
+  RETURN: "return",
+  SHOW: "show",
+  FLIP: "flip",
+  EXIT: "exit",
+};
