@@ -1,4 +1,4 @@
-import { SUIT_SHORTHAND, RANK_SHORTHAND, POSITIONS, SUBJECTS, ACTIONS, PHASES } from './consts';
+import { SUITS, RANK_SHORTHAND, POSITIONS, SUBJECTS, ACTIONS, PHASES } from './consts';
 
 export interface Personality {
 	id: number;
@@ -12,7 +12,7 @@ export interface Player {
 	player_id: number;
 	name: string;
 	position: keyof typeof POSITIONS;
-	hole_cards: [Card, Card];
+	hole_cards: Card[];
 	chips: number;
 	personality: Personality;
 	amount_in_street: number;
@@ -25,7 +25,8 @@ export interface Player {
 
 export interface Card {
 	rank: keyof typeof RANK_SHORTHAND;
-	suit: keyof typeof SUIT_SHORTHAND;
+	suit: keyof typeof SUITS;
+	value: number;
 }
 
 export interface Pot {
@@ -44,13 +45,15 @@ export interface Snapshot {
 	phase: keyof typeof PHASES;
 	round_id: number;
 	pot_queue: PotQueue;
-	community_cards: Array<string>;
+	community_cards: Card[];
 	players: Record<number, Player>;
+	seats: number[];
 	time: string;
 	subject_id: number;
 }
 
 export interface Action {
+	action_hash: string;
 	subject_type: keyof typeof SUBJECTS;
 	subject: string;
 	action: keyof typeof ACTIONS;

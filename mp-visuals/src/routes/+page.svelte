@@ -2,100 +2,71 @@
 	import PlayerDisplay from './Player.svelte';
 	import Dialogue from './Dialogue.svelte';
 
-	import type { Player, Card, Action } from './interfaces.ts';
+	import type { Player, Card } from './interfaces.ts';
 	//import { RANK_SHORTHAND, SUIT_SHORTHAND, SUITS } from './consts.ts'
 
 	import Board from './Board.svelte';
 
 	import CardTest from './CardTest.svelte';
+
+	import { players, seats, action, createActionQueue } from './action_queue';
+
+	import { get } from 'svelte/store';
+
 	let props = $props();
-	const { items }: { items: Action[] } = $derived(data);
 
 	$effect(() => {
-		console.log('DATA:', props.data);
-		console.log('ITEMS:', props.data?.items);
+		let queue = createActionQueue(props.data?.items);
+		queue.setInitial(get(queue.actions));
 	});
-	let hole_cards: [Card, Card] = [
-		{
-			rank: 2,
-			suit: 'd'
-		},
-		{
-			rank: 7,
-			suit: 's'
-		}
-	];
-
-	let community_cards: [Card, Card, Card, Card, Card] = [
-		{
-			rank: 't',
-			suit: 'h'
-		},
-		{
-			rank: 'j',
-			suit: 'h'
-		},
-		{
-			rank: 'k',
-			suit: 'h'
-		},
-		{
-			rank: 'q',
-			suit: 'h'
-		},
-		{
-			rank: 'a',
-			suit: 'h'
-		}
-	];
-
-	let player: Player = {
-		player_id: 0,
-		name: 'TEST NAME',
-		chips: 100,
-		position: 'HJ',
-		hole_cards: hole_cards
-	};
 </script>
 
 <div class="container">
 	<div class="table"></div>
 
 	<div class="seat p3">
-		<PlayerDisplay {player} />
+		{#if $seats[2] && $players[$seats[2]]}
+			<PlayerDisplay player={$players[$seats[2]]} />
+		{/if}
 	</div>
 	<div class="seat p4">
-		<PlayerDisplay {player} />
+		{#if $seats[3] && $players[$seats[3]]}
+			<PlayerDisplay player={$players[$seats[3]]} />
+		{/if}
 	</div>
 
 	<div class="seat p2">
-		<PlayerDisplay {player} />
+		{#if $seats[1] && $players[$seats[1]]}
+			<PlayerDisplay player={$players[$seats[1]]} />
+		{/if}
 	</div>
 	<div class="board">
-		<Board {community_cards} pot={569} />
+		{#if $action && $seats}
+			<Board seats={$seats} action={$action} />
+		{/if}
 		<!--<CardTest />-->
 	</div>
 	<div class="seat p5">
-		<PlayerDisplay {player} />
+		{#if $seats[4] && $players[$seats[4]]}
+			<PlayerDisplay player={$players[$seats[4]]} />
+		{/if}
 	</div>
 
 	<div class="seat p1">
-		<PlayerDisplay {player} />
+		{#if $seats[0] && $players[$seats[0]]}
+			<PlayerDisplay player={$players[$seats[0]]} />
+		{/if}
 	</div>
 	<div class="seat p6">
-		<PlayerDisplay {player} />
+		{#if $seats[5] && $players[$seats[5]]}
+			<PlayerDisplay player={$players[$seats[5]]} />
+		{/if}
 	</div>
 
 	<div class="dialoguebox">
 		<Dialogue dialogue="This is a dialogue test." />
 	</div>
 </div>
-
-<ul>
-	{#each props.data.items as item, i (i)}
-		<li>{item.action}</li>
-	{/each}
-</ul>
 
 <CardTest />
 
