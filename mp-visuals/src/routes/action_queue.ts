@@ -12,9 +12,16 @@ async function runAction(action_: Action) {
 	seats.set(action_.snapshot.seats);
 	players.set(action_.snapshot.players);
 	action.set(action_);
-	await delay(200);
+	if (
+		action_.action == ACTIONS.IS_POSITION ||
+		action_.action == ACTIONS.POST ||
+		action_.action == ACTIONS.COLLECT_SIDE
+	) {
+		return;
+	}
+	await delay(1000);
 
-	switch (action.action) {
+	switch (action_.action) {
 		case ACTIONS.SHUFFLE:
 			break;
 		case ACTIONS.IS_POSITION:

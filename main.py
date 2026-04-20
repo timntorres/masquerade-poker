@@ -71,10 +71,6 @@ def select_players(options: list[Player], count=6, ids:list[int]|None=None) -> d
     return selected_players
 
 
-def trim_action_list(round: HoldemRound) -> HoldemRound:
-    action_list_trimmed = round.actions[40:] if len(round.actions) > 40 else round.actions
-    return update(round, actions=action_list_trimmed)
-
 def populate_seats(round: HoldemRound) -> HoldemRound:
     seats_ = list(round.players.keys())
     return update(round, seats=seats_)
@@ -110,15 +106,10 @@ if __name__ == "__main__":
     round = populate_seats(round)
     while(len(round.players.values()) > 1):
 
-        actions = round.actions
-        if(len(actions) > 30):
-            surplus = len(actions)-30
-            round = update(round, actions=actions[surplus:])
 
         # Refresh pot
         empty_queue = update(empty_queue, ids_to_bets={}, total_amount=0, right_pots=[])
 
         round = update(round, pot_queue=empty_queue, community_cards=[], round_id=round.round_id+1)
         round = play_round(round)
-        round = trim_action_list(round)
 

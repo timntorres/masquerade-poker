@@ -1,43 +1,62 @@
 <script lang="ts">
 	import CardContainer from './CardContainer.svelte';
 	import type { Player } from './interfaces';
+	import { fade } from 'svelte/transition';
 
-	let { player }: { player: Player } = $props();
+	let { player, isActive }: { player: Player; isActive: boolean } = $props();
 	let chips = $derived(player.chips);
 	let name = $derived(player.name);
 </script>
 
-<div class="icon"></div>
+<div transition:fade class="container">
+	<div class={isActive ? 'icon active' : 'icon'}></div>
 
-<div class="cardtranslator">
-	<CardContainer cards={player.hole_cards} />
-</div>
+	<div class="cardtranslator">
+		<CardContainer cards={player.hole_cards} />
+	</div>
 
-<div class="overlay"></div>
+	<div class="overlay"></div>
 
-<div class="chipdisplay">
-	${chips.toFixed(2)}
-</div>
+	<div class="chipdisplay">
+		${chips.toFixed(2)}
+	</div>
 
-<div class="name">
-	{name}
+	<div class="name">
+		{name}
+	</div>
 </div>
 
 <style>
+	.container {
+		display: flex;
+		position: relative;
+		align-items: top;
+		justify-content: right;
+		width: 100%;
+	}
+
 	.chipdisplay {
 		position: absolute;
 		font-family: 'Apple SD Gothic Neo';
-		font-weight: 100;
-		letter-spacing: -0.3cqw;
+		font-weight: 200;
+		letter-spacing: -0.15cqw;
 
-		margin-top: 9.1cqw;
+		margin-top: 10.385cqw;
 
-		padding-right: 0.5cqw;
+		padding-right: 1cqw;
 
-		font-size: 3cqw;
+		font-size: 2cqw;
+	}
+
+	.active {
+		border: solid;
+		border-style: solid;
+		color: white;
 	}
 
 	.icon {
+		box-sizing: border-box;
+		border-width: 1px;
 		position: absolute;
 		background-color: #111;
 		height: 11.5cqw;
@@ -49,7 +68,7 @@
 	.overlay {
 		position: relative;
 		width: 100%;
-		opacity: 0.8;
+		opacity: 1;
 		background-image: linear-gradient(transparent, transparent, transparent, black);
 	}
 
@@ -61,12 +80,12 @@
 		font-weight: 700;
 		position: absolute;
 		margin-left: 1cqw;
-		margin-top: 10cqw;
+		margin-top: 10.5cqw;
 	}
 
 	.cardtranslator {
 		position: absolute;
 		left: 9cqw;
-		top: -1cqh;
+		top: -1.5cqh;
 	}
 </style>

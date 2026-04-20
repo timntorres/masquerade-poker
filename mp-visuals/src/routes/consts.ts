@@ -68,6 +68,28 @@ export const SUBJECTS = {
 	PLAYER: 'Player'
 };
 
+export const PASSIVE_ACTIONS = {
+	SHUFFLE: 'shuffle',
+	CHECK: 'check',
+	CALL: 'call',
+	BET: 'bet',
+	RAISE: 'raise',
+	FOLD: 'fold',
+	SAY: 'say',
+	THINK: 'think',
+	WIN: 'win',
+	POST: 'post',
+	IS_POSITION: 'is position',
+	BUY: 'buy',
+	DEALT: 'is dealt',
+	COLLECT: 'collect',
+	COLLECT_SIDE: 'collect side',
+	RETURN: 'return',
+	SHOW: 'show',
+	FLIP: 'flip',
+	EXIT: 'exit'
+};
+
 export const ACTIONS = {
 	SHUFFLE: 'shuffle',
 	CHECK: 'check',

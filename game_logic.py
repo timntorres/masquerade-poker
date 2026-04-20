@@ -2,7 +2,7 @@
 from game_structs import HoldemRound, Action, Player, Snapshot, T, Pot, PotQueue
 from constants import Phases, Actions, Positions, Subjects
 from deck import Deck, Hand, Card
-from utils import init_rand, shuffle, get_time, update
+from utils import init_rand, shuffle, get_time, get_nanoseconds, update
 from game_save import save_game
 
 import anthropic
@@ -101,10 +101,13 @@ Choose from the following responses:
 
 
 
-def build_log(round: HoldemRound, perspective: Player | None = None) -> str:
-    log_string = ""
-    prev_phase = ""
+def build_log(round: HoldemRound, perspective: Player | None = None, short_term_memory_limit=30) -> str:
     actions = round.actions
+    if(len(actions) > short_term_memory_limit):
+        surplus = len(actions)-short_term_memory_limit
+        actions=actions[surplus:]
+
+    log_string = ""
 
     prev_action_word = ""
 
@@ -136,8 +139,6 @@ def build_log(round: HoldemRound, perspective: Player | None = None) -> str:
         log_string += f"{action}\n"
         action.action
 
-
-        prev_phase = phase
     return log_string
 
 def log_action(round: HoldemRound, action: str, typed_object: T, object: str | None = None, subject_id:str = Subjects.DEALER_ID) -> HoldemRound:
@@ -160,11 +161,13 @@ def log_action(round: HoldemRound, action: str, typed_object: T, object: str | N
         pot_queue=round.pot_queue,
         community_cards=copy.deepcopy(round.community_cards), 
         players=copy.deepcopy(round.players), 
+        seats=round.seats,
         time=get_time(), 
         subject_id=subject_id
         )
 
     new_action = Action(
+        action_hash= f'{subject}_{action}_{get_nanoseconds()}',
         subject_type=subject_type, 
         subject=subject, 
         action=action, 
@@ -483,14 +486,6 @@ def post_blinds(round: HoldemRound) -> HoldemRound:
     round = log_action(round=round, action=Actions.POST, typed_object=sb_actual, subject_id=sb_id)
     round = log_action(round=round, action=Actions.POST, typed_object=bb_actual, subject_id=bb_id)
 
-    #If posting blinds made them all_in, we must remove their node
-    if(round.players[sb_id].is_all_in):
-        remove_node(round=round, player=round.players[sb_id])
-    if(round.players[bb_id].is_all_in):
-        remove_node(round=round, player=round.players[bb_id])
-
-
-
     return round
 
 def get_player_id_by_position(round: HoldemRound, position: str) -> int:
@@ -516,6 +511,15 @@ def deal_hole_cards(deck: Deck, round: HoldemRound) -> tuple[Deck, HoldemRound]:
         round = log_action(round, Actions.DEALT, typed_object=hole_cards, subject_id=current_player.player_id)
         ids_seen.add(current_id)
         current_id = current_player.next_id
+
+    round = update(round, players=updated_players)
+
+    # Now remove the nodes of those who were all-in after posting blinds
+    player_keys = list(round.players.keys())
+    for key in player_keys:
+        if(not round.players[key].is_all_in):
+            continue
+        round = remove_node(round=round, player=round.players[key])
 
     round = update(round, players=updated_players)
     
@@ -688,7 +692,7 @@ def request_action(round: HoldemRound) -> HoldemRound:
             action = Actions.FOLD
             bet_amount = 0
 
-            player = update(player, has_folded=True)
+            player = update(player, has_folded=True, hole_cards = [])
             round = update_players(round, [player])
             folded_ids.add(player.player_id)
 
@@ -800,10 +804,19 @@ def settle_pot(round: HoldemRound, folded_out=False):
             round = log_action(round, action, amount_per_winner, subject_id=player.player_id)
     return round
 
+def remove_seat_by_id(seats: list[int], id: int):
+    return list([seat if seat != id else -1 for seat in seats])
+
+
 def remove_empty_stacks(round:HoldemRound) -> HoldemRound:
     updated_players = {}
-    for player in round.players.values():
+    player_keys = list(round.players.keys())
+    updated_seats = []
+    for key in player_keys:
+        player = round.players[key]
         if(player.chips == 0):
+            updated_seats = remove_seat_by_id(round.seats, player.player_id)
+            round = update(round, seats=updated_seats)
             round = log_action(round=round, action=Actions.EXIT, typed_object=None, subject_id=player.player_id)
             continue
         updated_players[player.player_id] = player
@@ -831,7 +844,7 @@ def play_round(round: HoldemRound) -> HoldemRound:
     # Shuffle deck.
     round = update(round, phase=Phases.GAME_START)
     # seed=1774796861768377 <- good one for quick testing
-    round = init_rand(round, seed=1774796861768377)
+    round = init_rand(round)
     button_index = 0
     round = refresh_players(round)
     deck = shuffle(Deck.generate_deck())

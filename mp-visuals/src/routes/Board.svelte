@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fly } from 'svelte/transition';
 	import CardContainer from './CardContainer.svelte';
 	import type { Action } from './interfaces';
 	import { POSITIONS } from './consts';
@@ -9,61 +10,73 @@
 <div class="container">
 	<!-- Seat 1 -->
 	{#if seats[0] != -1}
-		<div class="betlocation a">
-			<div class="bet">${action.snapshot.players[seats[0]].amount_in_street.toFixed(2)}</div>
-		</div>
+		{#if action.snapshot.players[seats[0]].amount_in_street > 0}
+			<div class="betlocation a">
+				<div class="bet">${action.snapshot.players[seats[0]].amount_in_street.toFixed(2)}</div>
+			</div>
+		{/if}
 		{#if action.snapshot.players[seats[0]].position == POSITIONS.BTN}
-			<div class="btnlocation b">B</div>
+			<div transition:fly={{ y: 5 }} class="btnlocation b">B</div>
 		{/if}
 	{/if}
 
 	<!-- Seat 2 -->
 	{#if seats[1] != -1}
-		<div class="betlocation d">
-			<div class="bet">${action.snapshot.players[seats[1]].amount_in_street.toFixed(2)}</div>
-		</div>
+		{#if action.snapshot.players[seats[1]].amount_in_street > 0}
+			<div class="betlocation d">
+				<div class="bet">${action.snapshot.players[seats[1]].amount_in_street.toFixed(2)}</div>
+			</div>
+		{/if}
 		{#if action.snapshot.players[seats[1]].position == POSITIONS.BTN}
-			<div class="btnlocation c">B</div>
+			<div transition:fly={{ y: 5 }} class="btnlocation c">B</div>
 		{/if}
 	{/if}
 
 	<!-- Seat 3 -->
 	{#if seats[2] != -1}
-		<div class="betlocation f">
-			<div class="bet">${action.snapshot.players[seats[2]].amount_in_street.toFixed(2)}</div>
-		</div>
+		{#if action.snapshot.players[seats[2]].amount_in_street > 0}
+			<div class="betlocation f">
+				<div class="bet">${action.snapshot.players[seats[2]].amount_in_street.toFixed(2)}</div>
+			</div>
+		{/if}
 		{#if action.snapshot.players[seats[2]].position == POSITIONS.BTN}
-			<div class="btnlocation e">B</div>
+			<div transition:fly={{ y: 5 }} class="btnlocation e">B</div>
 		{/if}
 	{/if}
 
 	<!-- Seat 4 -->
 	{#if seats[3] != -1}
 		{#if action.snapshot.players[seats[3]].position == POSITIONS.BTN}
-			<div class="btnlocation g">B</div>
+			<div transition:fly={{ y: 5 }} class="btnlocation g">B</div>
 		{/if}
-		<div class="betlocation h">
-			<div class="bet">${action.snapshot.players[seats[3]].amount_in_street.toFixed(2)}</div>
-		</div>
+		{#if action.snapshot.players[seats[3]].amount_in_street > 0}
+			<div class="betlocation h">
+				<div class="bet">${action.snapshot.players[seats[3]].amount_in_street.toFixed(2)}</div>
+			</div>
+		{/if}
 	{/if}
 
 	<!-- Seat 5 -->
 	{#if seats[4] != -1}
-		<div class="betlocation rightalign i">
-			<div class="bet">${action.snapshot.players[seats[4]].amount_in_street.toFixed(2)}</div>
-		</div>
+		{#if action.snapshot.players[seats[4]].amount_in_street > 0}
+			<div class="betlocation rightalign i">
+				<div class="bet">${action.snapshot.players[seats[4]].amount_in_street.toFixed(2)}</div>
+			</div>
+		{/if}
 		{#if action.snapshot.players[seats[4]].position == POSITIONS.BTN}
-			<div class="btnlocation j">B</div>
+			<div transition:fly={{ y: 5 }} class="btnlocation j">B</div>
 		{/if}
 	{/if}
 
 	<!-- Seat 6 -->
 	{#if seats[5] != -1}
-		<div class="betlocation rightalign l">
-			<div class="bet">${action.snapshot.players[seats[5]].amount_in_street.toFixed(2)}</div>
-		</div>
+		{#if action.snapshot.players[seats[5]].amount_in_street > 0}
+			<div class="betlocation rightalign l">
+				<div class="bet">${action.snapshot.players[seats[5]].amount_in_street.toFixed(2)}</div>
+			</div>
+		{/if}
 		{#if action.snapshot.players[seats[5]].position == POSITIONS.BTN}
-			<div class="btnlocation k">B</div>
+			<div transition:fly={{ y: 5 }} class="btnlocation k">B</div>
 		{/if}
 	{/if}
 
@@ -131,8 +144,8 @@
 	.bet {
 		position: absolute;
 		font-family: 'Apple SD Gothic Neo';
-		font-size: 2cqw;
-		font-weight: 200;
+		font-size: 3cqw;
+		font-weight: 300;
 		letter-spacing: -0.15cqw;
 	}
 
@@ -171,12 +184,12 @@
 
 	.pot {
 		position: absolute;
-		margin-top: 27cqh;
+		margin-top: 28cqh;
 		margin-left: 12cqw;
 
-		font-size: 3cqw;
+		font-size: 3.5cqw;
 		font-family: 'Apple SD Gothic Neo';
-		font-weight: 500;
+		font-weight: 800;
 	}
 
 	.rightalign {

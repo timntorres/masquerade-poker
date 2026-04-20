@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Card } from './interfaces';
+	import { fade, fly } from 'svelte/transition';
 	import { SUIT_COLORS, SUIT_SYMBOLS } from './consts';
 
 	let { card }: { card: Card } = $props();
@@ -10,7 +11,7 @@
 	let symbol = $derived(SUIT_SYMBOLS[card.suit]);
 </script>
 
-<div class="card" style="color: {color}">
+<div transition:fly={{ y: 10 }} class="card" style="color: {color}">
 	<div class="rank">{rank_}</div>
 	<div class="suit">{symbol}</div>
 </div>

@@ -71,6 +71,7 @@ class Snapshot(Generic[T]):
     pot_queue: PotQueue
     community_cards: Tuple[str]
     players: Dict[int, Player]
+    seats: List[int]
     time: datetime
     subject_id: int = -1
 
@@ -80,6 +81,7 @@ class Snapshot(Generic[T]):
 
 @dataclass(frozen=True)
 class Action():
+    action_hash: str
     subject_type: str
     subject: str
     action: str
