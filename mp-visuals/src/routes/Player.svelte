@@ -8,7 +8,7 @@
 	let name = $derived(player.name);
 </script>
 
-<div transition:fade class="container">
+<div transition:fade class={player.is_all_in ? 'container allin' : 'container'}>
 	<div class={isActive ? 'icon active' : 'icon'}></div>
 
 	<div class="cardtranslator">
@@ -18,7 +18,11 @@
 	<div class="overlay"></div>
 
 	<div class="chipdisplay">
-		${chips.toFixed(2)}
+		{#if !player.is_all_in}
+			${chips.toFixed(2)}
+		{:else}
+			ALL-IN
+		{/if}
 	</div>
 
 	<div class="name">
@@ -27,6 +31,9 @@
 </div>
 
 <style>
+	.allin {
+		color: red;
+	}
 	.container {
 		display: flex;
 		position: relative;

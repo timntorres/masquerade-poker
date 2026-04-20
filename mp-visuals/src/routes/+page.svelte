@@ -23,7 +23,7 @@
 <div class="container">
 	<div class="table"></div>
 
-	{#if $seats[2] && $players[$seats[2]]}
+	{#if $seats[2] != -1 && $players[$seats[2]]}
 		<div class="seat p3">
 			<PlayerDisplay
 				player={$players[$seats[2]]}
@@ -32,7 +32,7 @@
 		</div>
 	{/if}
 	<div class="seat p4">
-		{#if $seats[3] && $players[$seats[3]]}
+		{#if $seats[3] != -1 && $players[$seats[3]]}
 			<PlayerDisplay
 				player={$players[$seats[3]]}
 				isActive={$players[$seats[3]].player_id == $action.snapshot.subject_id}
@@ -41,7 +41,7 @@
 	</div>
 
 	<div class="seat p2">
-		{#if $seats[1] && $players[$seats[1]]}
+		{#if $seats[1] != -1 && $players[$seats[1]]}
 			<PlayerDisplay
 				player={$players[$seats[1]]}
 				isActive={$players[$seats[1]].player_id == $action.snapshot.subject_id}
@@ -55,7 +55,7 @@
 		<!--<CardTest />-->
 	</div>
 	<div class="seat p5">
-		{#if $seats[4] && $players[$seats[4]]}
+		{#if $seats[4] != -1 && $players[$seats[4]]}
 			<PlayerDisplay
 				player={$players[$seats[4]]}
 				isActive={$players[$seats[4]].player_id == $action.snapshot.subject_id}
@@ -64,7 +64,7 @@
 	</div>
 
 	<div class="seat p1">
-		{#if $seats[0] && $players[$seats[0]]}
+		{#if $seats[0] != -1 && $players[$seats[0]]}
 			<PlayerDisplay
 				player={$players[$seats[0]]}
 				isActive={$players[$seats[0]].player_id == $action.snapshot.subject_id}
@@ -72,7 +72,7 @@
 		{/if}
 	</div>
 	<div class="seat p6">
-		{#if $seats[5] && $players[$seats[5]]}
+		{#if $seats[5] != -1 && $players[$seats[5]]}
 			<PlayerDisplay
 				player={$players[$seats[5]]}
 				isActive={$players[$seats[5]].player_id == $action.snapshot.subject_id}

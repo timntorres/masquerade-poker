@@ -12,41 +12,25 @@ async function runAction(action_: Action) {
 	seats.set(action_.snapshot.seats);
 	players.set(action_.snapshot.players);
 	action.set(action_);
-	if (
-		action_.action == ACTIONS.IS_POSITION ||
-		action_.action == ACTIONS.POST ||
-		action_.action == ACTIONS.COLLECT_SIDE
-	) {
-		return;
-	}
-	await delay(1000);
 
 	switch (action_.action) {
 		case ACTIONS.SHUFFLE:
+			await delay(1000);
 			break;
 		case ACTIONS.IS_POSITION:
 			break;
 		case ACTIONS.POST:
+			await delay(0);
 			break;
 		case ACTIONS.DEALT:
-			break;
-		case ACTIONS.FOLD:
-			break;
-		case ACTIONS.CALL:
-			break;
-		case ACTIONS.RAISE:
-			break;
-		case ACTIONS.BET:
+			await delay(250);
 			break;
 		case ACTIONS.FLIP:
-			break;
-		case ACTIONS.SHOW:
-			break;
-		case ACTIONS.COLLECT:
-			break;
 		case ACTIONS.COLLECT_SIDE:
+			await delay(500);
 			break;
-		case ACTIONS.EXIT:
+		default:
+			await delay(750);
 			break;
 	}
 }
