@@ -46,12 +46,26 @@ export function convert_to_string(action_: Action | undefined): string {
 	return phrase;
 }
 
-async function runAction(action_: Action) {
+function find_url(action_: Action, urls: string[]) {
+	return urls.filter((url) => url.endsWith(action_.action_hash + '.wav'))[0];
+}
+
+async function runAction(action_: Action, audioUrls: string[]) {
 	seats.set(action_.snapshot.seats);
 	players.set(action_.snapshot.players);
 	action.set(action_);
-
+	let url = '';
+	let audio: HTMLAudioElement;
 	switch (action_.action) {
+		case ACTIONS.SAY:
+		case ACTIONS.THINK:
+			url = find_url(action_, audioUrls);
+			audio = new Audio(url);
+			await audio.play();
+			await new Promise<void>((resolve) => {
+				audio.addEventListener('ended', () => resolve(), { once: true });
+			});
+			break;
 		case ACTIONS.SHUFFLE:
 			await delay(1000);
 			break;
@@ -74,8 +88,9 @@ async function runAction(action_: Action) {
 	}
 }
 
-export function createActionQueue(initial: Action[] = []) {
-	const actions = writable<Action[]>(initial);
+export function createActionQueue(initial_actions: Action[], initial_audio: string[]) {
+	const actions = writable<Action[]>(initial_actions);
+	const audioUrls = writable<string[]>(initial_audio);
 	const currentAction = writable<Action | null>(null);
 	const isProcessing = writable(false);
 
@@ -96,7 +111,7 @@ export function createActionQueue(initial: Action[] = []) {
 			actions.set(queue.slice(1));
 			currentAction.set(next);
 
-			await runAction(next);
+			await runAction(next, get(audioUrls));
 			isProcessing.set(false);
 		}
 		currentAction.set(null);
@@ -104,7 +119,7 @@ export function createActionQueue(initial: Action[] = []) {
 	}
 	return {
 		actions,
-		currentAction,
+		audioUrls,
 		isProcessing,
 		setInitial
 	};

@@ -5,17 +5,14 @@
 	//import { RANK_SHORTHAND, SUIT_SHORTHAND, SUITS } from './consts.ts'
 
 	import Board from './Board.svelte';
-
 	import CardTest from './CardTest.svelte';
-
 	import { players, seats, action, createActionQueue } from './action_queue';
-
 	import { get } from 'svelte/store';
 
 	let props = $props();
 
 	$effect(() => {
-		let queue = createActionQueue(props.data?.items);
+		let queue = createActionQueue(props.data?.items, props.data?.audioUrls);
 		queue.setInitial(get(queue.actions));
 	});
 </script>

@@ -3,7 +3,8 @@ from game_structs import HoldemRound, Action, Player, Snapshot, T, Pot, PotQueue
 from constants import Phases, Actions, Positions, Subjects
 from deck import Deck, Hand, Card
 from utils import init_rand, shuffle, get_time, get_nanoseconds, update
-from game_save import save_game
+from game_save import save_game, generate_speech
+
 
 import anthropic
 
@@ -30,7 +31,8 @@ Here's what your voice sounds like:
 
 - {'\n- '.join([quote for quote in p.quotes])}
 
-Please respond with one short sentence, in-character, representing an extremely brief summary of your internal monologue at this time. Avoid *action asterisks* and especially avoid repetition. Comment only on things that have changed since your last thought."""    
+You must only use the cliche'd catchphrases above during extremely important moments, once in a blue moon. Other times, you capture the same energy with more subtlety.
+Please respond with one short sentence, in-character, representing an extremely brief summary of your internal monologue at this time. Avoid *action asterisks* and especially avoid repetition. Comment only on things that have changed since your last thought."""
 
 def build_decision_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest_bet: float, min_raise: float, justification: str) -> str:
         """
@@ -104,25 +106,21 @@ Such that N is a number between {min_raise} and {player.chips - prev_highest_bet
 
         p = player.personality
 
-        return f"""\n{player.name}? It's your turn to act.\n\n\
-You've been dealt {player.hole_cards}.\n\
+        return f"""\n{player.name} has thought long and hard about this hand.\n\n\
+They have been dealt {player.hole_cards}.\n\
 There's ${round.pot_queue.total_amount} in the pot.\n\
-You have ${player.chips} in chips.\n\
+They have ${player.chips} in chips.\n\
 
-Here is your current thought process: 
+You have a direct insight into the inner workings their mind:
 
 {justification}
 
-Your goal is to choose the response that most closely matches this justification.
-
-This table has a strict time limit, so move quickly or be penalized.\n\n\
+They have already made their choice. Based off the above justification as a response to the game state, you must estimate as accuately as possible how you believe they acted.\n\n\
 Choose from the following responses:
 "{check_or_call}" {call_all_in}
 "fold"
 {bet_or_raise_option}
 {ending}"""
-
-
 
 def build_log(round: HoldemRound, perspective: Player | None = None, short_term_memory_limit=30) -> str:
     actions = round.actions
@@ -178,6 +176,10 @@ def log_action(round: HoldemRound, action: str, typed_object: T, object: str | N
         subject_type=Subjects.PLAYER
         subject = round.players[subject_id].name
 
+    action_hash = f'{subject.replace(' ', '')}_{action}_{get_nanoseconds()}'
+    if action==Actions.THINK or action==Actions.SAY:
+        # Generate speech files for relevant actions.
+        generate_speech(round, typed_object, action_hash)
 
     snapshot = Snapshot(
         typed_object=typed_object, 
@@ -192,7 +194,7 @@ def log_action(round: HoldemRound, action: str, typed_object: T, object: str | N
         )
 
     new_action = Action(
-        action_hash= f'{subject}_{action}_{get_nanoseconds()}',
+        action_hash=action_hash,
         subject_type=subject_type, 
         subject=subject, 
         action=action, 
@@ -697,6 +699,13 @@ def prompt_stuff(round: HoldemRound) -> HoldemRound:
 
         print(justification_response)
 
+        round = log_action(
+            round = round,
+            action=Actions.THINK,
+            typed_object=justification_response,
+            subject_id=player.player_id
+        )
+
         decision_prompt = build_decision_prompt(round, player, bet_occurred, highest_bet, min_raise, justification_response)
         print("\n\nSENDING DECISION CONTEXT.\n\n")
         decision_context = log + decision_prompt
@@ -754,14 +763,6 @@ def prompt_stuff(round: HoldemRound) -> HoldemRound:
         if(player.has_folded):
             folded_ids.add(player.player_id)
             round = remove_node(round, player)
-
-
-        round = log_action(
-            round = round,
-            action=Actions.THINK,
-            typed_object=justification_response,
-            subject_id=player.player_id
-        )        
 
         round = log_action( \
             round=round, 

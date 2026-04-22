@@ -1,31 +1,42 @@
-import fs from 'fs/promises';
+import type { PageServerLoad } from './$types';
+import { promises as fs } from 'fs';
 import path from 'path';
-import type { Action } from './interfaces';
 
-export const load = async () => {
-	const savesDir = path.resolve('../saves');
+type Action = {
+	// define your actual structure here
+	type: string;
+	payload: unknown;
+};
 
-	// Read all files in the directory
-	const files = await fs.readdir(savesDir);
+export const load: PageServerLoad = async () => {
+	// --- SAVES ---
+	const savesDir: string = path.resolve('../saves');
 
-	// Filter for .json files only
-	const jsonFiles = files.filter((f) => f.endsWith('.json'));
+	const files: string[] = await fs.readdir(savesDir);
+	const jsonFiles: string[] = files.filter((f) => f.endsWith('.json'));
 
-	if (jsonFiles.length === 0) {
-		return { items: [] as Action[] };
+	let items: Action[] = [];
+
+	if (jsonFiles.length > 0) {
+		jsonFiles.sort((a, b) => a.localeCompare(b));
+		const latestFile: string = jsonFiles[jsonFiles.length - 1];
+
+		const filePath: string = path.join(savesDir, latestFile);
+		const fileContent: string = await fs.readFile(filePath, 'utf-8');
+
+		items = JSON.parse(fileContent) as Action[];
 	}
 
-	// Sort alphabetically and get the last one
-	jsonFiles.sort((a, b) => a.localeCompare(b));
-	const latestFile = jsonFiles[jsonFiles.length - 1];
+	// --- AUDIO ---
+	const speechDir: string = path.resolve('../speech');
+	const speechFiles: string[] = await fs.readdir(speechDir);
 
-	// Read and parse the file
-	const filePath = path.join(savesDir, latestFile);
-	const fileContent = await fs.readFile(filePath, 'utf-8');
+	const audioFiles: string[] = speechFiles.filter((f) => f.endsWith('.wav'));
 
-	const items: Action[] = JSON.parse(fileContent);
+	const audioUrls: string[] = audioFiles.map((f) => `/speech/${encodeURIComponent(f)}`);
 
 	return {
-		items
+		items,
+		audioUrls
 	};
 };

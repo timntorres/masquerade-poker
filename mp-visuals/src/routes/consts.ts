@@ -70,8 +70,6 @@ export const SUBJECTS = {
 
 export const PASSIVE_ACTIONS = {
 	SHUFFLE: 'shuffle',
-	SAY: 'say',
-	THINK: 'think',
 	WIN: 'win',
 	POST: 'post',
 	IS_POSITION: 'is position',

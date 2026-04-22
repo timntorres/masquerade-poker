@@ -79,7 +79,7 @@ def populate_seats(round: HoldemRound) -> HoldemRound:
 if __name__ == "__main__":
     personalities = load_personalities('characters.yaml')
     player_pool = init_players(personalities)
-    players = select_players(player_pool, ids=[3, 2, 11, 6, 1, 14])
+    players = select_players(player_pool)
 
     for p in players:
         player = players[p]
@@ -102,14 +102,11 @@ if __name__ == "__main__":
         community_cards = []
     )
 
-    
     round = populate_seats(round)
-    #while(len(round.players.values()) > 1):
+    while(len(round.players.values()) > 1):
+        # Refresh pot
+        empty_queue = update(empty_queue, ids_to_bets={}, total_amount=0, right_pots=[])
 
-
-    # Refresh pot
-    empty_queue = update(empty_queue, ids_to_bets={}, total_amount=0, right_pots=[])
-
-    round = update(round, pot_queue=empty_queue, community_cards=[], round_id=round.round_id+1)
-    round = play_round(round)
+        round = update(round, pot_queue=empty_queue, community_cards=[], round_id=round.round_id+1)
+        round = play_round(round)
 
