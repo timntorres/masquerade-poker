@@ -52,7 +52,7 @@
 
 
 <div class="dialogue">
-  <ul>
+  <ul class="log">
     {#each $log as a, index (index)}
     <li transition:slide={{easing: expoInOut, duration: 125}} class="log">{a}</li>
     {/each}
@@ -63,8 +63,11 @@
 <style>
 
 .log {
+  width: auto;
   list-style-type: none;
-  white-space: pre;
+  white-space: pre-wrap;
+  text-indent: -2cqw;
+  overflow-wrap: break-word;
 }
 
 .dialogue {
@@ -72,6 +75,7 @@
   mask-image: linear-gradient(to top, black 50%, transparent 90%);
   display: flex;
   height: 100%;
+  width: 100%;
   overflow: hidden;
   flex-direction: column;
   justify-content: flex-end;

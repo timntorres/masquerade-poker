@@ -13,8 +13,26 @@ round_ = round # fml for naming the HoldemRound instance round
 import time
 import copy
 
+def build_justification_prompt(round: HoldemRound, player: Player) -> str:
+        p = player.personality
+        return f"""\n{player.name}? It's your turn to act.\n\n\
+You've been dealt {player.hole_cards}.\n\
+There's ${round.pot_queue.total_amount} in the pot.\n\
+You have ${player.chips} in chips.\n\
 
-def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest_bet: float, min_raise: float) -> str:
+A few Poker tips (Just silently acknowledge these. Avoid mentioning them in your response):
+- Leaving a fraction of your stack behind is almost always inferior to going all-in.
+- The fewer people at the table, the wider your range can be. \
+
+\nAs {player.name}, you are {p.traits}. \
+Your No-Limit Hold 'Em playstyle is {p.style}. \
+Here's what your voice sounds like: 
+
+- {'\n- '.join([quote for quote in p.quotes])}
+
+Please respond with one short sentence, in-character, representing an extremely brief summary of your internal monologue at this time. Avoid *action asterisks* and especially avoid repetition. Comment only on things that have changed since your last thought."""    
+
+def build_decision_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest_bet: float, min_raise: float, justification: str) -> str:
         """
         CASES
         1. bet, check, fold
@@ -90,10 +108,13 @@ Such that N is a number between {min_raise} and {player.chips - prev_highest_bet
 You've been dealt {player.hole_cards}.\n\
 There's ${round.pot_queue.total_amount} in the pot.\n\
 You have ${player.chips} in chips.\n\
-\nAs {player.name}, you are {p.traits}. \
-Your No-Limit Hold 'Em playstyle is {p.style}. \
-If you're considering a bet or raise that commits more than half your stack, just go all-in. \
-When you're heads-up, the ideal VPIP is 40-50% higher than playing six-handed. \
+
+Here is your current thought process: 
+
+{justification}
+
+Your goal is to choose the response that most closely matches this justification.
+
 This table has a strict time limit, so move quickly or be penalized.\n\n\
 Choose from the following responses:
 "{check_or_call}" {call_all_in}
@@ -136,6 +157,8 @@ def build_log(round: HoldemRound, perspective: Player | None = None, short_term_
     
         must_anonymize = perspective_differs and (action.subject_type != Subjects.DEALER)
         if must_anonymize:
+            if action.action == Actions.THINK and action.snapshot.subject_id != perspective.player_id:
+                continue
             action = Action.anonymize(action)
             
         log_string += f"{action}\n"
@@ -575,7 +598,25 @@ def interpret_response(response: str) -> tuple [str, float]:
 
     return response_string, val
 
-def request_action(round: HoldemRound) -> HoldemRound:
+def send_prompt(context: str) -> str:
+    print(f"\n\n\n{context}\n")
+
+    client = anthropic.Anthropic()
+    message = client.messages.create(
+        # claude-opus-4-6 -> ~$0.10/min
+        model="claude-haiku-4-5",
+        max_tokens=200,
+        messages=[
+            {
+                "role": "user",
+                "content": context,
+            }
+        ],
+    )
+    response = message.content[0].text
+    return response
+
+def prompt_stuff(round: HoldemRound) -> HoldemRound:
     phase = round.phase
 
     is_preflop = (phase == Phases.PREFLOP)
@@ -646,31 +687,23 @@ def request_action(round: HoldemRound) -> HoldemRound:
             return round
 
 
+
         log = build_log(round, player)
-        prompt = build_prompt(round, player, bet_occurred, highest_bet, min_raise)
-        context = log + prompt
 
-        print(f"\n\n\n{context}\n")
+        justification_prompt = build_justification_prompt(round, player)
+        justification_context = log + justification_prompt
+        print("\n\nSENDING JUSTIFICATION CONTEXT.\n\n")
+        justification_response = send_prompt(justification_context)
 
-        client = anthropic.Anthropic()
-        message = client.messages.create(
-            # claude-opus-4-6 -> ~$0.10/min
-            model="claude-haiku-4-5",
-            max_tokens=20,
-            messages=[
-                {
-                    "role": "user",
-                    "content": context,
-                }
-            ],
-        )
-        response = message.content[0].text
+        print(justification_response)
 
-        processed, value = interpret_response(response)
+        decision_prompt = build_decision_prompt(round, player, bet_occurred, highest_bet, min_raise, justification_response)
+        print("\n\nSENDING DECISION CONTEXT.\n\n")
+        decision_context = log + decision_prompt
 
-                # processed = 'raise'
-        # value = 99999
+        decision_response = send_prompt(decision_context)
 
+        processed, value = interpret_response(decision_response)
 
         bet_amount = 0
 
@@ -721,6 +754,14 @@ def request_action(round: HoldemRound) -> HoldemRound:
         if(player.has_folded):
             folded_ids.add(player.player_id)
             round = remove_node(round, player)
+
+
+        round = log_action(
+            round = round,
+            action=Actions.THINK,
+            typed_object=justification_response,
+            subject_id=player.player_id
+        )        
 
         round = log_action( \
             round=round, 
@@ -906,7 +947,7 @@ def play_round(round: HoldemRound) -> HoldemRound:
             round = log_action(round=round, action=Actions.FLIP, \
                 typed_object=community_cards, object=object)
 
-        round = request_action(round)
+        round = prompt_stuff(round)
 
         # Flush players' amounts in at the end of each street.
         updated_players = {}
