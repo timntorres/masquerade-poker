@@ -1,7 +1,7 @@
 import { writable, get } from 'svelte/store';
 import type { Action, Player, Card, Snapshot } from './interfaces';
 import { ACTIONS } from './consts';
-import { SUIT_SHORTHAND, RANK_SHORTHAND } from './consts';
+import { SUIT_SHORTHAND } from './consts';
 
 export const players = writable<Record<number, Player>>([]);
 export const seats = writable<number[]>([]);
@@ -18,9 +18,10 @@ async function runAction(action_: Action) {
 			await delay(1000);
 			break;
 		case ACTIONS.IS_POSITION:
+			await delay(125);
 			break;
 		case ACTIONS.POST:
-			await delay(0);
+			await delay(250);
 			break;
 		case ACTIONS.DEALT:
 			await delay(250);
