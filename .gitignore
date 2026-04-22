@@ -1,5 +1,6 @@
 # saves
 /saves/
+/speech/
 
 # macOS system files
 .DS_Store
