@@ -230,7 +230,7 @@ def set_positions(round: HoldemRound) -> HoldemRound:
 
     position_names = HoldemRound.POSITIONS_PER_PLAYERCOUNT[len(round.players)]
 
-    updated_players = {}
+    updated_players = copy.deepcopy(round.players)
 
     # Find ID of btn
     btn_seat_index = round.seat_index_of_btn
@@ -263,7 +263,17 @@ def set_positions(round: HoldemRound) -> HoldemRound:
 
         updated_players[player.player_id] = \
             update(player, position=new_position, next_id=new_next_id, prev_id=new_prev_id)
-    round = update(round, players=updated_players)
+
+        round = update(round, players=updated_players)
+        round = log_action(
+            round=round,
+            action=Actions.IS_POSITION,
+            typed_object=new_position,
+            subject_id=player.player_id
+        )
+
+
+
 
     return update(round, players=updated_players)
 
@@ -472,23 +482,8 @@ def post_blinds(round: HoldemRound) -> HoldemRound:
             bb_id = player.player_id
 
     round, sb_actual = attempt_bet(round, round.players[sb_id], sb, Actions.POST)
-    round, bb_actual = attempt_bet(round, round.players[bb_id], bb, Actions.POST)
-
-    """
-    for id in round.seats:
-        if id == -1:
-            continue
-        p = round.players[id]
-        position = p.position
-        round = log_action(
-            round=round,
-            action=Actions.IS_POSITION,
-            typed_object=position,
-            subject_id=p.player_id
-        )
-    """
-
     round = log_action(round=round, action=Actions.POST, typed_object=sb_actual, subject_id=sb_id)
+    round, bb_actual = attempt_bet(round, round.players[bb_id], bb, Actions.POST)
     round = log_action(round=round, action=Actions.POST, typed_object=bb_actual, subject_id=bb_id)
 
     return round
