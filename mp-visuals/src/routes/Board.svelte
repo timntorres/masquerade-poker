@@ -81,7 +81,7 @@
 	{/if}
 
 	<div class="board center">
-		<CardContainer cards={action.snapshot.community_cards} />
+		<CardContainer cards={action.snapshot.community_cards} {action} />
 		<div class="pot center">
 			${action.snapshot.pot_queue.total_amount.toFixed(2)}
 		</div>

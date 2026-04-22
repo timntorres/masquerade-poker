@@ -48,6 +48,7 @@ class Player:
 @dataclass(frozen=True)
 class Pot: 
     ids_involved: List[int]
+    winning_card_set: List[str]
     amount: float
 
 @dataclass(frozen=True)
@@ -59,7 +60,7 @@ class PotQueue:
 
     ids_to_bets: Dict[int, float]
     total_amount: float
-    right_pots: Tuple[Pot]
+    right_pots: List[Pot]
 
 T = TypeVar("T")
 

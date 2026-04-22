@@ -1,13 +1,13 @@
 <script lang="ts">
-	import type { Card } from './interfaces';
+	import type { Card, Action } from './interfaces';
 	import CardDisplay from './Card.svelte';
 
-	let { cards }: { cards?: Array<Card> } = $props();
+	let { cards, action }: { cards?: Array<Card>, action?: Action | undefined } = $props();
 </script>
 
 <div class="row">
 	{#each cards ?? [] as card, i (i)}
-		<CardDisplay {card} />
+		<CardDisplay {card} {action}  />
 	{/each}
 </div>
 

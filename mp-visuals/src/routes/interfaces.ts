@@ -31,6 +31,7 @@ export interface Card {
 
 export interface Pot {
 	ids_involved: Array<number>;
+	winning_card_set: Array<Card>;
 	amount: number;
 }
 

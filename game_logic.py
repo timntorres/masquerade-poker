@@ -290,7 +290,7 @@ def right_pot(round: HoldemRound) -> HoldemRound:
 
     pot_queue = round.pot_queue
     ids_to_bets = pot_queue.ids_to_bets
-    right_pots = pot_queue.right_pots if len(pot_queue.right_pots) else (Pot({}, 0),)
+    right_pots = pot_queue.right_pots if len(pot_queue.right_pots) else [Pot({}, [], 0)]
 
     if(len(ids_to_bets) == 0):
         return round
@@ -339,14 +339,18 @@ def right_pot(round: HoldemRound) -> HoldemRound:
         main_pot = right_pots[-1]
         main_pot = update(main_pot, ids_involved=list(ids_to_bets.keys()), amount=main_pot.amount + amount_this_street)
 
-        tuple_to_concatenate = (main_pot,)
+        list_to_concatenate = [main_pot]
         if condition_1_met:
             # What we called the main pot, above, is now a side pot.
-            actual_main_pot = Pot(list(set([id for id in ids_in_action])), 0)
-            tuple_to_concatenate = tuple_to_concatenate + (actual_main_pot,)
+            actual_main_pot = Pot(
+                ids_involved=list(set([id for id in ids_in_action])), 
+                winning_card_set=[],
+                amount=0
+            )
+            list_to_concatenate = list_to_concatenate + [actual_main_pot]
 
-        right_pots = right_pots[:-1] + tuple_to_concatenate
-        pot_queue = update(pot_queue, right_pots=right_pots, ids_to_bets={})
+        right_pots = right_pots[:-1] + list_to_concatenate
+        pot_queue = update(pot_queue, right_pots=list(right_pots), ids_to_bets={})
         round = update(round, pot_queue=pot_queue)
         print("condition 1")
         print(ids_to_bets)
@@ -408,10 +412,11 @@ def right_pot(round: HoldemRound) -> HoldemRound:
 
         if len(those_who_folded) < len(bettors_of_this_size):
             side_pot = Pot(
-                list(copy_to_disburse.keys()),
-                side_pot_size
+                ids_involved=list(copy_to_disburse.keys()),
+                winning_card_set=[],
+                amount=side_pot_size
             )
-            right_pots += (side_pot,)
+            right_pots += [side_pot]
             dead_money = 0
         else:
             # Accumulate this for the next valid side pot.
@@ -780,7 +785,6 @@ def settle_pot(round: HoldemRound, folded_out=False):
     while(len(right_pots) > 0):
         pot_number += 1
         current_pot = right_pots[-1]
-        right_pots = right_pots[:-1]
 
         candidates = [round.players[id] for id in current_pot.ids_involved \
             if not round.players[id].has_folded]
@@ -797,7 +801,20 @@ def settle_pot(round: HoldemRound, folded_out=False):
             round = log_action(round, Actions.RETURN, current_pot.amount, subject_id=candidates[0].player_id)
             continue
 
+
+        # Update right_pot to include winning hand's cards.
         winning_hands = Hand.find_winners(candidates, round.community_cards)
+        winning_card_set = set()
+        for hand in winning_hands:
+            for card in hand.cards:
+                winning_card_set.add(card)
+        
+        current_pot = update(current_pot, winning_card_set=list(winning_card_set))
+        right_pots[-1] = current_pot
+        updated_pot_queue = update(round.pot_queue, right_pots=right_pots)
+        round = update(round, pot_queue = updated_pot_queue)
+
+        # Disburse winnings
         amount_per_winner = current_pot.amount/len(winning_hands)
         
         for hand in winning_hands:
@@ -825,6 +842,7 @@ def settle_pot(round: HoldemRound, folded_out=False):
 
 
             round = log_action(round, action, amount_per_winner, subject_id=player.player_id)
+        right_pots = right_pots[:-1]
     return round
 
 def remove_seat_by_id(seats: list[int], id: int):

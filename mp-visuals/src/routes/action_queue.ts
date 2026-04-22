@@ -1,5 +1,5 @@
 import { writable, get } from 'svelte/store';
-import type { Action, Player, Card, Snapshot } from './interfaces';
+import type { Action, Player, Card, Snapshot, PotQueue, Pot } from './interfaces';
 import { ACTIONS } from './consts';
 import { SUIT_SHORTHAND } from './consts';
 
@@ -47,9 +47,7 @@ export function createActionQueue(initial: Action[] = []) {
 
 		processQueue();
 	}
-	console.log('a');
 	async function processQueue() {
-		console.log('b');
 		if (get(isProcessing)) return;
 		isProcessing.set(true);
 
@@ -101,11 +99,26 @@ function parse_player_record(player_record: Record<number, Player>): Record<numb
 	return updated_record;
 }
 
+function parse_right_pot(right_pot: Pot): Pot {
+	return {
+		...right_pot,
+		winning_card_set: right_pot.winning_card_set.map((c: Card) => parse_card(c))
+	};
+}
+
+function parse_potqueue(potqueue: PotQueue): PotQueue {
+	return {
+		...potqueue,
+		right_pots: potqueue.right_pots.map((r: Pot) => parse_right_pot(r))
+	};
+}
+
 function parse_snapshot(snapshot: Snapshot): Snapshot {
 	return {
 		...snapshot,
 		community_cards: snapshot.community_cards.map((c: Card) => parse_card(c)),
-		players: parse_player_record(snapshot.players)
+		players: parse_player_record(snapshot.players),
+		pot_queue: parse_potqueue(snapshot.pot_queue)
 	};
 }
 

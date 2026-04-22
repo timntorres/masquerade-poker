@@ -1,9 +1,9 @@
 <script lang="ts">
 	import CardContainer from './CardContainer.svelte';
-	import type { Player } from './interfaces';
+	import type { Player, Action } from './interfaces';
 	import { fade } from 'svelte/transition';
 
-	let { player, isActive }: { player: Player; isActive: boolean } = $props();
+	let { player, isActive, action }: { player: Player; isActive: boolean; action: Action | undefined } = $props();
 	let chips = $derived(player.chips);
 	let name = $derived(player.name);
 </script>
@@ -13,7 +13,7 @@
 
 
 	<div class="cardtranslator">
-		<CardContainer cards={player.hole_cards} />
+		<CardContainer cards={player.hole_cards} {action} />
 	</div>
 
 	<div class="overlay">

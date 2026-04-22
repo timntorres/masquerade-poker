@@ -28,6 +28,7 @@
 			<PlayerDisplay
 				player={$players[$seats[2]]}
 				isActive={$players[$seats[2]].player_id == $action.snapshot.subject_id}
+				action={$action}
 			/>
 		</div>
 	{/if}
@@ -36,6 +37,7 @@
 			<PlayerDisplay
 				player={$players[$seats[3]]}
 				isActive={$players[$seats[3]].player_id == $action.snapshot.subject_id}
+				action={$action}
 			/>
 		{/if}
 	</div>
@@ -45,6 +47,7 @@
 			<PlayerDisplay
 				player={$players[$seats[1]]}
 				isActive={$players[$seats[1]].player_id == $action.snapshot.subject_id}
+				action={$action}
 			/>
 		{/if}
 	</div>
@@ -59,6 +62,7 @@
 			<PlayerDisplay
 				player={$players[$seats[4]]}
 				isActive={$players[$seats[4]].player_id == $action.snapshot.subject_id}
+				action={$action}
 			/>
 		{/if}
 	</div>
@@ -68,6 +72,7 @@
 			<PlayerDisplay
 				player={$players[$seats[0]]}
 				isActive={$players[$seats[0]].player_id == $action.snapshot.subject_id}
+				action={$action}
 			/>
 		{/if}
 	</div>
@@ -76,6 +81,7 @@
 			<PlayerDisplay
 				player={$players[$seats[5]]}
 				isActive={$players[$seats[5]].player_id == $action.snapshot.subject_id}
+				action={$action}
 			/>
 		{/if}
 	</div>

@@ -1,22 +1,48 @@
 <script lang="ts">
-	import type { Card } from './interfaces';
+	import { writable, get } from 'svelte/store'
+	import type { Card, Action } from './interfaces';
 	import { fade, fly } from 'svelte/transition';
-	import { SUIT_COLORS, SUIT_SYMBOLS } from './consts';
+	import { PHASES, SUIT_COLORS, SUIT_SYMBOLS } from './consts';
 
-	let { card }: { card: Card } = $props();
+	let { card, action }: { card: Card, action: Action | undefined } = $props();
 
 	let rank_ = $derived(card.rank);
 
 	let color = $derived(SUIT_COLORS[card.suit]);
 	let symbol = $derived(SUIT_SYMBOLS[card.suit]);
+
+	const is_included = writable<boolean>(true);
+
+	$effect(() => {
+		let is_showdown = action?.snapshot.phase == PHASES.SHOWDOWN;
+		let winning_cards = action?.snapshot.pot_queue.right_pots.at(-1)?.winning_card_set;
+		let empty = (winning_cards != undefined) && winning_cards.length === 0;
+
+		if(winning_cards === undefined || empty || !is_showdown) {
+			is_included.set(true);
+			return;
+		}
+
+		let included = winning_cards.some(c => card.rank === c.rank && card.suit === c.suit );
+		is_included.set(included);
+	});
+
+
 </script>
 
-<div transition:fly={{ y: 10 }} class="card" style="color: {color}">
+<div transition:fly={{ y: 10 }} class={$is_included ? "card" : "card exclusion"} style="color: {color}">
 	<div class="rank">{rank_}</div>
 	<div class="suit">{symbol}</div>
 </div>
 
 <style>
+
+	.exclusion {
+		opacity: 0.35;
+		transform: translate(0, 1cqw);
+
+	}
+
 	.rank {
 		position: absolute;
 		opacity: 0.9;
