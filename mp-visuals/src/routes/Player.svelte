@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CardContainer from './CardContainer.svelte';
+	import { PASSIVE_ACTIONS } from './consts';
 	import type { Player, Action } from './interfaces';
 	import { fade } from 'svelte/transition';
 
@@ -9,8 +10,8 @@
 </script>
 
 <div transition:fade class={player.is_all_in ? 'container allin' : 'container'}>
-	<div class={isActive ? 'icon active' : 'icon'}></div>
-
+	
+	<div class={(isActive && !Object.values(PASSIVE_ACTIONS).includes(action?.action as keyof typeof PASSIVE_ACTIONS)) ? 'icon active' : 'icon'}></div>
 
 	<div class="cardtranslator">
 		<CardContainer cards={player.hole_cards} {action} />

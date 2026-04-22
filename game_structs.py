@@ -95,9 +95,9 @@ class Action():
         subject = self.subject
 
         if (Grammar.STACK in phrase) and (self.subject_type != Subjects.DEALER):
-            player = self.snapshot.players
+            players = self.snapshot.players
             id = self.snapshot.subject_id
-            phrase = phrase.replace(Grammar.STACK, f"${player[id].chips}")
+            phrase = phrase.replace(Grammar.STACK, f"${players[id].chips}")
 
         phrase = phrase.replace(Grammar.SUBJECT, subject)
         phrase = phrase.replace(Grammar.OBJECT, self.object)

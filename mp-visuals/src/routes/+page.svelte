@@ -87,7 +87,7 @@
 	</div>
 
 	<div class="dialoguebox">
-		<Dialogue dialogue="This is a dialogue test." />
+		<Dialogue action={$action} />
 	</div>
 </div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
+	import { fly, scale } from 'svelte/transition';
+	import {expoInOut} from 'svelte/easing';
 	import CardContainer from './CardContainer.svelte';
 	import type { Action } from './interfaces';
 	import { POSITIONS } from './consts';
@@ -40,6 +41,7 @@
 			</div>
 		{/if}
 		{#if action.snapshot.players[seats[2]].position == POSITIONS.BTN}
+		
 			<div transition:fly={{ y: 5 }} class="btnlocation e">B</div>
 		{/if}
 	{/if}
@@ -82,9 +84,13 @@
 
 	<div class="board center">
 		<CardContainer cards={action.snapshot.community_cards} {action} />
-		<div class="pot center">
+		{#key action.snapshot.pot_queue.total_amount}
+		<div transition:scale={{duration:125, easing:expoInOut}} class="pot center">
+		{#if action.snapshot.pot_queue.total_amount > 0}
 			${action.snapshot.pot_queue.total_amount.toFixed(2)}
+		{/if}
 		</div>
+		{/key}
 	</div>
 </div>
 

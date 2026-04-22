@@ -799,6 +799,7 @@ def settle_pot(round: HoldemRound, folded_out=False):
             player = update(candidates[0], chips=candidates[0].chips + current_pot.amount)
             round = update_players(round, [player])
             round = log_action(round, Actions.RETURN, current_pot.amount, subject_id=candidates[0].player_id)
+            right_pots = right_pots[:-1]
             continue
 
 

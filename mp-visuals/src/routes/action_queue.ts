@@ -1,12 +1,50 @@
 import { writable, get } from 'svelte/store';
 import type { Action, Player, Card, Snapshot, PotQueue, Pot } from './interfaces';
-import { ACTIONS } from './consts';
+import { ACTIONS, DOLLAR_VALUE_PHRASES, Grammar, PHRASES, SUBJECTS } from './consts';
 import { SUIT_SHORTHAND } from './consts';
 
 export const players = writable<Record<number, Player>>([]);
 export const seats = writable<number[]>([]);
 export const action = writable<Action>();
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export function convert_to_string(action_: Action | undefined): string {
+	if (action_ === undefined) return '';
+
+	let phrase = PHRASES[action_.action.toUpperCase() as keyof typeof PHRASES];
+	const subject = action_.subject;
+
+	let all_in = false;
+
+	if (action_.subject_type == SUBJECTS.PLAYER) {
+		const id = action_.snapshot.subject_id;
+		const player = action_.snapshot.players[id];
+		all_in = player.is_all_in;
+
+		if (phrase.includes(Grammar.STACK)) {
+			const players = action_.snapshot.players;
+			phrase = phrase.replace(Grammar.STACK, `$${players[id].chips}`);
+		}
+	}
+
+	phrase = phrase.replace(Grammar.SUBJECT, subject);
+
+	let object = action_.object;
+	if (
+		DOLLAR_VALUE_PHRASES.includes(PHRASES[action_.action.toUpperCase() as keyof typeof PHRASES])
+	) {
+		object = parseFloat(object).toFixed(2);
+	}
+
+	phrase = phrase.replace(Grammar.OBJECT, object.toString());
+
+	let all_in_phrase = ' and is all-in';
+	if (!all_in) {
+		all_in_phrase = '';
+	}
+	phrase = phrase.replace(Grammar.ALL_IN, all_in_phrase);
+	return phrase;
+}
 
 async function runAction(action_: Action) {
 	seats.set(action_.snapshot.seats);
