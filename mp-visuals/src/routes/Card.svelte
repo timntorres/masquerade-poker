@@ -15,10 +15,12 @@
 
 	$effect(() => {
 		let is_showdown = action?.snapshot.phase == PHASES.SHOWDOWN;
-		let winning_cards = action?.snapshot.pot_queue.right_pots.at(-1)?.winning_card_set;
+		let pot = action?.snapshot.pot_queue.right_pots.at(-1);
+		let winning_cards = pot?.winning_card_set;
+		let is_uncalled_surplus = pot?.ids_involved.length != undefined && pot?.ids_involved.length == 1;
 		let empty = (winning_cards != undefined) && winning_cards.length === 0;
 
-		if(winning_cards === undefined || empty || !is_showdown) {
+		if(winning_cards === undefined || empty || !is_showdown || is_uncalled_surplus) {
 			is_included.set(true);
 			return;
 		}
