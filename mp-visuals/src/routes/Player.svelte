@@ -16,8 +16,7 @@
 	<div class="cardtranslator">
 		<CardContainer cards={player.hole_cards} {action} />
 	</div>
-
-	<div class="overlay">
+	<div class={player.is_all_in ? "allinoverlay" : "overlay" }>
 		<div class="bottom_row_text">
 			<div class="left">
 				{#key player.position}
@@ -71,12 +70,19 @@
 		border-radius: 50%;
 	}
 
-	.overlay {
+	.allinoverlay {
 		position: relative;
-
 		display: flex;
 		align-items: flex-end;
+		width: 100%;
+		opacity: 1;
+		background-image: linear-gradient(transparent, transparent, transparent, white);
+	}
 
+	.overlay {
+		position: relative;
+		display: flex;
+		align-items: flex-end;
 		width: 100%;
 		opacity: 1;
 		background-image: linear-gradient(transparent, transparent, transparent, black);
@@ -101,7 +107,7 @@
 
 
 	.allin {
-		color: red;
+		color: darkred;
 	}
 
 	.chipdisplay {

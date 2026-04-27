@@ -79,7 +79,7 @@ def populate_seats(round: HoldemRound) -> HoldemRound:
 if __name__ == "__main__":
     personalities = load_personalities('characters.yaml')
     player_pool = init_players(personalities)
-    players = select_players(player_pool)
+    players = select_players(player_pool, ids=[5, 2, 11, 15, 1, 13])
 
     for p in players:
         player = players[p]

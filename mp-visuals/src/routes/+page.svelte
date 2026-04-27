@@ -88,8 +88,6 @@
 	</div>
 </div>
 
-<CardTest />
-
 <div class="ticks"></div>
 
 <div class="ticks"></div>

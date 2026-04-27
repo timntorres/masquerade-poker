@@ -36,6 +36,12 @@ export function convert_to_string(action_: Action | undefined): string {
 		object = parseFloat(object).toFixed(2);
 	}
 
+	// Trim Thinking by \n.
+	if (action_.action == ACTIONS.THINK) {
+		const candidates = object.split('\n');
+		object = candidates.reduce((a, b) => (a.length > b.length ? a : b), '');
+	}
+
 	phrase = phrase.replace(Grammar.OBJECT, object.toString());
 
 	let all_in_phrase = ' and is all-in';

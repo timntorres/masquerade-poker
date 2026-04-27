@@ -14,7 +14,40 @@ round_ = round # fml for naming the HoldemRound instance round
 import time
 import copy
 
-def build_justification_prompt(round: HoldemRound, player: Player) -> str:
+def build_justification_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest_bet: float, min_raise: float) -> str:
+        prev_highest_bet = highest_bet
+        amount_to_call = prev_highest_bet - player.amount_in_street
+        """Betting / Checking logic"""
+        # Has anyone else bet this street?
+        prev_bet_exists = bet_occurred
+        # Can I afford to bet more than the minimum bet?
+        can_afford_min_bet = player.chips > min_raise
+        """Raising / Calling logic"""
+        # Does the previous bettor have me covered?
+        am_covered = amount_to_call >= player.chips
+        # Can I min raise with chips to spare?
+        can_raise_with_surplus = amount_to_call + min_raise < player.chips
+
+
+        is_bet_check = (not prev_bet_exists) or (player.amount_in_street == prev_highest_bet)
+
+        only_all_in_bet = (not prev_bet_exists) and (not can_afford_min_bet)
+        only_all_in_call = prev_bet_exists and am_covered
+        only_all_in_raise = prev_bet_exists and (not can_raise_with_surplus)
+
+        bet_or_raise = "bet" if is_bet_check else "raise"
+        check_or_call = "check" if is_bet_check else "call"
+
+        bet_all_in = "(all in)" if only_all_in_bet else ""
+        call_all_in = "(all in)" if only_all_in_call else ""
+        raise_all_in = "(all in)" if only_all_in_raise else ""
+
+        bet_or_raise_all_in = bet_all_in or raise_all_in
+
+        bet_or_raise_option = "" if call_all_in else f'''"{bet_or_raise} N" {bet_or_raise_all_in}\n\
+Such that N is a number between {min_raise} and {player.chips - prev_highest_bet}.\n'''
+
+
         p = player.personality
         return f"""\n{player.name}? It's your turn to act.\n\n\
 You've been dealt {player.hole_cards}.\n\
@@ -24,6 +57,13 @@ You have ${player.chips} in chips.\n\
 A few Poker tips (Just silently acknowledge these. Avoid mentioning them in your response):
 - Leaving a fraction of your stack behind is almost always inferior to going all-in.
 - The fewer people at the table, the wider your range can be. \
+- Checking is always better than folding.
+
+Here are the options:
+
+"{check_or_call}" {call_all_in}
+"fold"
+{bet_or_raise_option}
 
 \nAs {player.name}, you are {p.traits}. \
 Your No-Limit Hold 'Em playstyle is {p.style}. \
@@ -32,7 +72,8 @@ Here's what your voice sounds like:
 - {'\n- '.join([quote for quote in p.quotes])}
 
 You must only use the cliche'd catchphrases above during extremely important moments, once in a blue moon. Other times, you capture the same energy with more subtlety.
-Please respond with one short sentence, in-character, representing an extremely brief summary of your internal monologue at this time. Avoid *action asterisks* and especially avoid repetition. Comment only on things that have changed since your last thought."""
+Please respond with one short sentence, in-character, representing an extremely brief summary of your internal monologue at this time. Avoid *action asterisks* and especially avoid repetition. Comment only on things that have changed since your last thought.
+"""
 
 def build_decision_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest_bet: float, min_raise: float, justification: str) -> str:
         """
@@ -102,9 +143,7 @@ def build_decision_prompt(round: HoldemRound, player: Player, bet_occurred: bool
 
         bet_or_raise_option = "" if call_all_in else f'''"{bet_or_raise} N" {bet_or_raise_all_in}\n\
 Such that N is a number between {min_raise} and {player.chips - prev_highest_bet}.\n'''
-        ending = """Respond QUICKLY, with at most ONE word and ONE number, and NO punctuation!"""
-
-        p = player.personality
+        ending = """Remember, you're not trying to win the game. You're trying to guess what this character has already decided. Respond with at most ONE word and ONE number, and NO punctuation!"""
 
         return f"""\n{player.name} has thought long and hard about this hand.\n\n\
 They have been dealt {player.hole_cards}.\n\
@@ -179,7 +218,11 @@ def log_action(round: HoldemRound, action: str, typed_object: T, object: str | N
     action_hash = f'{subject.replace(' ', '')}_{action}_{get_nanoseconds()}'
     if action==Actions.THINK or action==Actions.SAY:
         # Generate speech files for relevant actions.
+
         generate_speech(round, typed_object, action_hash)
+
+        # Now that speech has been generated, we can trim this.
+        typed_object = max(typed_object.split('\n'), key=len)
 
     snapshot = Snapshot(
         typed_object=typed_object, 
@@ -606,7 +649,7 @@ def send_prompt(context: str) -> str:
     client = anthropic.Anthropic()
     message = client.messages.create(
         # claude-opus-4-6 -> ~$0.10/min
-        model="claude-haiku-4-5",
+        model="claude-haiku-4-6",
         max_tokens=200,
         messages=[
             {
@@ -692,7 +735,7 @@ def prompt_stuff(round: HoldemRound) -> HoldemRound:
 
         log = build_log(round, player)
 
-        justification_prompt = build_justification_prompt(round, player)
+        justification_prompt = build_justification_prompt(round, player, bet_occurred, highest_bet, min_raise)
         justification_context = log + justification_prompt
         print("\n\nSENDING JUSTIFICATION CONTEXT.\n\n")
         justification_response = send_prompt(justification_context)
