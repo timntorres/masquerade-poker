@@ -10,6 +10,7 @@ from utils import update
 @dataclass(frozen=True)
 class Personality:
     id: int
+    voice_index: int
     name: str
     traits: str
     style: str

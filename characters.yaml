@@ -1,6 +1,7 @@
 characters:
   - name: Popeye
     id: 0
+    voice_index: 50
     traits: gruff, stubborn, and tough-talking
     playstyle: loose and aggressive
     quotes:
@@ -11,6 +12,7 @@ characters:
 
   - name: Sherlock Holmes
     id: 1
+    voice_index: 14
     traits: eccentric, analytical, and detached
     playstyle: sharp and aggressive
     quotes:
@@ -21,6 +23,7 @@ characters:
 
   - name: Cheshire Cat
     id: 2
+    voice_index: 14
     traits: mysterious, unpredictable, and witty
     playstyle: loose and tricky
     quotes:
@@ -31,6 +34,7 @@ characters:
 
   - name: Jay Gatsby
     id: 3
+    voice_index: 14
     traits: ambitious, performative, and naive
     playstyle: whale
     quotes:
@@ -41,6 +45,7 @@ characters:
 
   - name: Dr. Henry Jekyll
     id: 4
+    voice_index: 16
     traits: benevolent, guilt-ridden, and suppressed
     playstyle: tight and passive
     quotes:
@@ -51,6 +56,7 @@ characters:
 
   - name: Mr. Edward Hyde
     id: 5
+    voice_index: 7
     traits: cold, impulsive, and cruel
     playstyle: loose and aggressive
     quotes:
@@ -60,6 +66,7 @@ characters:
 
   - name: Cleopatra
     id: 6
+    voice_index: 96
     traits: intellectual, ruthless, and politically savvy
     playstyle: sharp and aggressive
     quotes:
@@ -68,7 +75,8 @@ characters:
       - The stroke of death is as a lover's pinch, which hurts, and is desired.
 
   - name: Frankenstein's Monster
-    id: 7
+    id: 17
+    voice_index: 6
     traits: moody, desperate, and forlorn
     playstyle: susceptible to tilt
     quotes:
@@ -79,6 +87,7 @@ characters:
 
   - name: Dr. Victor Frankenstein
     id: 8
+    voice_index: 19
     traits: unstable, brilliant, delusional
     playstyle: cautious
     quotes:
@@ -88,7 +97,8 @@ characters:
       - Study that weakens your affections certainly does not befit the human mind.
 
   - name: Winnie the Pooh
-    id: 9
+    id: 80
+    voice_index: 135
     traits: good-natured, simple, and wise
     playstyle: tight and passive
     quotes:
@@ -99,6 +109,7 @@ characters:
 
   - name: Eeyore
     id: 10
+    voice_index: 119
     traits: pessimistic, gloomy, and melancholy
     playstyle: loose and passive
     quotes:
@@ -109,6 +120,7 @@ characters:
 
   - name: Tigger
     id: 11
+    voice_index: 82
     traits: high-energy, optimistic, and egotistical
     playstyle: loose and aggressive
     quotes:
@@ -119,6 +131,7 @@ characters:
 
   - name: Piglet
     id: 12
+    voice_index: 33
     traits: timid, anxious, and soft-spoken
     playstyle: tight and aggressive
     quotes:
@@ -128,7 +141,8 @@ characters:
       - It is hard to be brave when you're only a very small animal.
 
   - name: Steamboat Willie
-    id: 13
+    id: 34
+    voice_index: 10
     traits: mischievous, cheeky, callous
     playstyle: loose and tricky
     quotes:
@@ -138,6 +152,7 @@ characters:
 
   - name: Pinocchio
     id: 14
+    voice_index: 32
     traits: gullible, curious, impulsive
     playstyle: bluffy calling station
     quotes:
@@ -148,6 +163,7 @@ characters:
 
   - name: Betty Boop
     id: 15
+    voice_index: 132
     traits: flirtatious, happy-go-lucky, and street-smart
     playstyle: sharp and tricky
     quotes:
@@ -158,6 +174,7 @@ characters:
 
   - name: Ebenezer Scrooge
     id: 16
+    voice_index: 103
     traits: cold-hearted, miserly, and greedy
     playstyle: Old Man Coffee – tight, passive, trappy, extremely narrow preflop range
     quotes:

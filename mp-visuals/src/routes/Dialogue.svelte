@@ -25,7 +25,6 @@
 
       if(action?.snapshot.phase === PHASES.GAME_START) {
         if(get(prev_action) != action?.action) {
-          console.log("Hello?");
           log.set([...get(log), ` `])
         }
       }
@@ -83,7 +82,7 @@
   color:white;
   font-family: 'Apple SD Gothic Neo';
   text-align: left;
-  font-size: 1.5cqw;
+  font-size: 2.5cqw;
   font-weight: 100;
 }
 

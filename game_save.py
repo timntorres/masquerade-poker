@@ -9,11 +9,11 @@ import pyttsx3
 def generate_round_filename(round: HoldemRound):
     return f'{round.date}_{round.time.replace(':', '-')}'
 
-def generate_speech(round, words, hash):
+def generate_speech(round, words, hash, voice_index=14):
     engine = pyttsx3.init()
 
     voices = engine.getProperty('voices')
-    engine.setProperty('voice', voices[14].id)
+    engine.setProperty('voice', voices[voice_index].id)
 
     raw_path = Path(f'speech/raw_{generate_round_filename(round)}___{hash}.wav')
     final_path = Path(f'speech/{generate_round_filename(round)}___{hash}.wav')

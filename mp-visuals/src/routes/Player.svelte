@@ -61,7 +61,7 @@
 
 	.icon {
 		box-sizing: border-box;
-		border-width: 1px;
+		border-width: 6px;
 		position: absolute;
 		background-color: #111;
 		height: 11.5cqw;
