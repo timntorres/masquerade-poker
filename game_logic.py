@@ -1,5 +1,3 @@
-from openai import OpenAI
-
 from game_structs import HoldemRound, Action, Player, Snapshot, T, Pot, PotQueue
 from constants import Phases, Actions, Positions, Subjects
 from deck import Deck, Hand, Card
@@ -173,11 +171,23 @@ def log_action(round: HoldemRound, action: str, typed_object: T, object: str | N
         subject_type=Subjects.PLAYER
         subject = round.players[subject_id].name
 
-    action_hash = f'{subject.replace(' ', '')}_{action}_{get_nanoseconds()}'
+    action_hash = f"{subject.replace(' ', '')}_{action}_{get_nanoseconds()}"
     if action==Actions.THINK or action==Actions.SAY:
         # Generate speech files for relevant actions.
 
-        generate_speech(round, typed_object, action_hash, voice_index=round.players[subject_id].personality.voice_index)
+        voice_index = 14
+        voice_name = None
+        if subject_id != Subjects.DEALER_ID:
+            voice_index = round.players[subject_id].personality.voice_index
+            voice_name = round.players[subject_id].personality.name
+
+        generate_speech(
+            round,
+            typed_object,
+            action_hash,
+            voice_index=voice_index,
+            voice_name=voice_name,
+        )
 
         # Now that speech has been generated, we can trim this.
         typed_object = typed_object.split('\n\n')[0]
@@ -604,28 +614,10 @@ def interpret_response(response: str) -> tuple [str, float]:
 def send_prompt(context: str) -> str:
     print(f"\n\n\n{context}\n")
 
-    # client = anthropic.Anthropic()
-    # message = client.messages.create(
-    #     # claude-opus-4-6 -> ~$0.10/min
-    #     model="claude-haiku-4-5",
-    #     max_tokens=200,
-    #     messages=[
-    #         {
-    #             "role": "user",
-    #             "content": context,
-    #         }
-    #     ],
-    # )
-    # response = message.content[0].text
-
-    # Initialize client with your custom credentials
-    client = OpenAI(
-        api_key="your-api-key-here",
-        base_url="https://your-custom-url.com"
-    )
-
-    response = client.chat.completions.create(
-        model="gpt-4o", # Replace with your target model
+    client = anthropic.Anthropic()
+    message = client.messages.create(
+        # claude-opus-4-6 -> ~$0.10/min
+        model="claude-haiku-4-5",
         max_tokens=200,
         messages=[
             {
@@ -634,9 +626,8 @@ def send_prompt(context: str) -> str:
             }
         ],
     )
-    
-    # Access the text content from the first choice
-    return response.choices[0].message.content
+
+    return message.content[0].text
 
 def prompt_stuff(round: HoldemRound) -> HoldemRound:
     phase = round.phase
