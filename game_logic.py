@@ -3,15 +3,174 @@ from constants import Phases, Actions, Positions, Subjects
 from deck import Deck, Hand, Card
 from utils import init_rand, shuffle, get_time, get_nanoseconds, update
 from game_save import save_game, generate_speech
-
+from heuristics_preprocessor import estimate_straight_combos
 
 import anthropic
+import json
 
 import random
 import math
 round_ = round # fml for naming the HoldemRound instance round
 import time
 import copy
+
+# Information to help the AI reason.
+def build_heuristics(hole_cards, community_cards):
+    # Current hand
+    heuristics = "HEURISTICS:\n"
+    if(len(community_cards) == 0):
+        heuristics += "It's preflop.\n"
+        suited = hole_cards[0].suit == hole_cards[1].suit
+
+        rank_1 = hole_cards[0].rank
+        rank_2 = hole_cards[1].rank
+        value_1 = Deck.RANKS.index(hole_cards[0].rank)
+        value_2 = Deck.RANKS.index(hole_cards[1].rank)
+
+        gap = abs(value_1 - value_2)
+        if suited:
+            if value_1 >= Deck.RANKS.index("Q") and \
+                value_2 >= Deck.RANKS.index("Q"):
+                heuristics += "You've got suited broadway."
+            elif value_1 >= Deck.RANKS.index("T") and \
+                value_2 >= Deck.RANKS.index("T"):
+                heuristics += "You've got weak suited broadway. Fold this to preflop aggression."
+            elif gap == 1 and value_1 >= Deck.RANKS.index("8"):
+                heuristics += "You've got a decent suited connector. Still, fold this to preflop aggression."
+            elif gap == 1:
+                heuristics += "You've got a weak suited connector. Fold this to preflop aggression."
+            elif gap == 2:
+                heuristics += "You've got a suited one-gapper. Fold this to preflop aggression."
+            elif rank_1 == 'A' or rank_2 == 'A':
+                heuristics += "You've got a suited ace. Fold this to preflop aggression."
+            elif rank_1 == 'K' or rank_2 == 'K':
+                heuristics += "You've got a suited king. Fold this to preflop aggression."
+            else:
+                heuristics += "You've got suited trash. Fold this to preflop aggression."
+        else:
+            if gap == 0 and value_1 > Deck.RANKS.index("Q"):
+                heuristics += "You've got the world."
+            elif gap == 0 and value_1 > Deck.RANKS.index("9"):
+                heuristics += "You've got a strong pocket pair."
+            elif gap == 0 and value_1 > Deck.RANKS.index("6"):
+                heuristics += "You've got a decent pocket pair."
+            elif gap == 0:
+                heuristics += "You've got a weak pocket pair. Fold this to preflop aggression."
+            elif value_1 >= Deck.RANKS.index("Q") and \
+                value_2 >= Deck.RANKS.index("Q"):
+                heuristics += "You've got off-suit broadway. Fold this to preflop aggression."
+            elif value_1 >= Deck.RANKS.index("T") and \
+                value_2 >= Deck.RANKS.index("T"):
+                heuristics += "You've got weak off-suit broadway. Fold this to preflop aggression."
+            elif gap == 1:
+                heuristics += "You've got a mediocre offsuit connector. Fold this to preflop aggression."
+            elif rank_1 == 'A' or rank_2 == 'A':
+                heuristics += "You've got a mediocre offsuit ace. Fold this to preflop aggression."
+            else:
+                heuristics += "You've got off-suit junk. Fold this to preflop aggression."
+        return heuristics
+    hand = Hand.classify(list(hole_cards), list(community_cards))
+    heuristics += f"Your current hand: {hand.hand_id}\n"
+
+
+    # How good is our pair?
+    if(hand.hand_id == 'one pair'):
+        paired_rank = hand.pairs[0][0].rank
+        # Check if the pair belongs to me.
+        hole_ranks = [card.rank for card in hole_cards]
+        belongs_to_me = paired_rank in hole_ranks
+
+        ranks_higher = 0
+        if belongs_to_me:
+            ordered = Hand.make_consecutive(community_cards, reversed=True)
+            current_index = 0
+            while(
+                Deck.RANKS.index(ordered[current_index].rank) > \
+                Deck.RANKS.index(paired_rank)):
+                ranks_higher += 1
+                current_index += 1
+                if(current_index >= len(ordered)):
+                    break
+            on_board = paired_rank in [card.rank for card in ordered]
+            if(ranks_higher == 0 and not on_board):
+                heuristics += "You have an overpair to the board.\n"
+            elif(ranks_higher == 0 and on_board):
+                heuristics += "You have top pair.\n"
+            elif(ranks_higher == 1):
+                heuristics += "You have second pair.\n"
+            elif(ranks_higher == 2):
+                heuristics += "You have third pair.\n"
+            else:
+                heuristics += "You have a lousy pair.\n"
+
+    # Paired board?
+    rank_count = {}
+    for card in community_cards:
+        rank_count[card.rank] = rank_count.setdefault(card.rank, 0) + 1
+    max_count_of_one_rank = max(rank_count.values())
+    ranks_seen = len(rank_count.keys())
+    if (len(community_cards) - ranks_seen == 2) and max_count_of_one_rank == 2:
+        heuristics += "It's a double-paired board.\n"
+    elif(max_count_of_one_rank == 2):
+        heuristics += "The board is paired.\n"
+    elif(max_count_of_one_rank == 3):
+        heuristics += "There's trips on the board.\n"
+    elif(max_count_of_one_rank == 4):
+        heuristics += "There's quads on the board. Highest kicker wins.\n"
+    else:
+        heuristics += "The board is not paired.\n"
+
+    # Flushes on the board?
+    suit_count = {}
+    for card in community_cards:
+        suit_count[card.suit] = suit_count.setdefault(card.suit, 0) + 1
+    two_suited = len(suit_count) == 2
+    three_to_a_flush = max(suit_count.values()) == 3
+    four_to_a_flush = max(suit_count.values()) == 4
+    rainbow_flop = len(community_cards) == 3 and len(suit_count) == 3
+    complete_rainbow = len(community_cards) >= 4 and len(suit_count) == 4
+    if complete_rainbow:
+        heuristics += "Complete rainbow board; no flushes possible.\n"
+    elif rainbow_flop:
+        heuristics += "Rainbow flop.\n"
+    elif four_to_a_flush:
+        heuristics += "There's four to a flush on the board.\n"
+    elif three_to_a_flush:
+        heuristics += "There's three to a flush on the board.\n"
+    elif two_suited:
+        heuristics += "There could be flush draws out there.\n"
+  
+    # Straights on the board?
+    name = ""
+    if len(community_cards) == 3:
+        name = "data/straight_rough_count_flop.json"
+    elif len(community_cards) == 4:
+        name = "data/straight_rough_count_turn.json"
+    elif len(community_cards) == 5:
+        name = "data/straight_rough_count_river.json"
+
+    if name != "":
+        straight_counts = {}
+        with open(name, "r") as file:
+            straight_counts = json.load(file)
+            combos = estimate_straight_combos(community_cards)
+            samples = sum(straight_counts.values())
+            sorted_counts = sorted(straight_counts.keys())
+            cumul = 0
+            for key in sorted_counts:
+                key = int(key)
+                if(key >= combos):
+                    break
+                cumul += int(straight_counts[str(key)])
+            
+            if(cumul/samples > 0.4):
+                heuristics += f"The board is more connected than ~{round(cumul/samples*100, 2)}%  of boards at this street."
+            elif(combos == 0):
+                heuristics += "No made straights are currently possible."
+            else:
+                heuristics += f"A straight is at least theoretically possible.\nThe board is more connected than ~{round(cumul/samples*100, 2)}% of boards at this street.\n"
+
+    return heuristics
 
 
 def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest_bet: float, min_raise: float):
@@ -86,10 +245,10 @@ Such that N is a number between {min_raise} and {player.chips - prev_highest_bet
 
         p = player.personality
         return f"""\n{player.name}? It's your turn to act.\n\n\
-You've been dealt {player.hole_cards}.\n\
+You've been dealt {player.hole_cards} in {player.position}.\n\
 There's ${round.pot_queue.total_amount} in the pot.\n\
 You have ${player.chips} in chips.\n\
-
+{build_heuristics(player.hole_cards, round.community_cards)}
 \nAs {player.name}, you are {p.traits}. \
 Your No-Limit Hold 'Em playstyle is {p.style}. \
 
@@ -704,6 +863,7 @@ def prompt_stuff(round: HoldemRound) -> HoldemRound:
         log = build_log(round, player)
 
         prompt = build_prompt(round, player, bet_occurred, highest_bet, min_raise)
+        
         context = log + prompt
         print("\n\nSENDING PROMPT.\n\n")
         response = send_prompt(context)

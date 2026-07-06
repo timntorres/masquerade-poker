@@ -128,9 +128,9 @@ class Action():
 class HoldemRound:
 
     SMALL_BLIND: ClassVar[int] = 1
-    BIG_BLIND: ClassVar[int] = 2
-    MIN_BUY_IN: ClassVar[int] = 20
-    MAX_BUY_IN: ClassVar[int] = 30
+    BIG_BLIND: ClassVar[int] = 3
+    MIN_BUY_IN: ClassVar[int] = 300
+    MAX_BUY_IN: ClassVar[int] = 500
 
     phase: str
     round_id: int

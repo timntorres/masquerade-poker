@@ -116,6 +116,7 @@ class Card:
         return card_a.value > card_b.value
 
 
+
 class Hand:
 
     HANDS = [ \
@@ -125,7 +126,7 @@ class Hand:
                 'royal flush' \
             ]
 
-    def __init__(self, player, hand_id, cards, quads, threes, pairs, kickers):
+    def __init__(self, player, hand_id, cards, quads, threes, pairs, kickers, plays_board):
         self.player = player
         self.hand_id = hand_id
         self.cards = cards
@@ -133,6 +134,7 @@ class Hand:
         self.threes = threes
         self.pairs = pairs
         self.kickers = kickers
+        self.plays_board = plays_board
 
     def __str__(self):
         return f"{self.player} {self.cards} {self.hand_id}\n"
@@ -238,7 +240,7 @@ class Hand:
     # The first three highest cards are tied, and the kicker is down the line.
     @staticmethod
     def compare_sequence(hands, getter):
-        candidates = copy.deepcopy(hands)
+        candidates = hands
 
         if(len(candidates) < 2):
             return candidates
@@ -279,19 +281,9 @@ class Hand:
             candidates = Hand.filter_by_highest(candidates, lambda h: h.kickers[0].rank)
         return candidates
 
+
     @staticmethod
-    def find_winners(players: list[Player], community_cards: list[str]) -> list['Hand']:
-        hands = {}
-        
-        for player in players:
-            hole_cards = player.hole_cards
-            if(type(hole_cards) == tuple):
-                hole_cards = list(hole_cards)
-
-            hand = Hand.classify(hole_cards + community_cards, player)
-
-            hands.setdefault(hand.hand_id, []).append(hand)
-        
+    def break_ties(hands):
         max_value_hand = max(hands.keys(), key = lambda hand: Hand.HANDS.index(hand))
 
         winning_hands = hands[max_value_hand]
@@ -299,7 +291,7 @@ class Hand:
         # One winner
         if(len(winning_hands) == 1):
             return winning_hands
-    
+
         # Tiebreakers
 
         # Royal flush over royal flush is always a chop.
@@ -367,16 +359,51 @@ class Hand:
 
 
     @staticmethod
+    def find_winners(players: list[Player], community_cards: list[str]) -> list['Hand']:
+        hands = {}
+        
+        for player in players:
+            hole_cards = player.hole_cards
+            if(type(hole_cards) == tuple):
+                hole_cards = list(hole_cards)
+
+            hand = Hand.classify(hole_cards, community_cards, player)
+
+            hands.setdefault(hand.hand_id, []).append(hand)
+                
+        return Hand.break_ties(hands)
+    
+
+
+    @staticmethod
     def flatten_pairs(pairs):
         list_of_lists = list(pair.constituents for pair in pairs.values())
         flattened_cards = [card for pair in list_of_lists for card in pair]
         return flattened_cards
 
+    @staticmethod
+    def classify(hole_cards, community_cards, player=None):
+        hands = {}
+        hand = Hand.classify_(hole_cards + community_cards, player)
+        
+        if(len(community_cards) == 5):
+            the_board = Hand.classify_(community_cards, player)
+            the_board.plays_board = True
+
+            hands.setdefault(hand.hand_id, []).append(hand)
+            hands.setdefault(the_board.hand_id, []).append(the_board)
+
+            hands = Hand.break_ties(hands)
+            if(len(hands) == 2):
+                return the_board
+        return hand
+
     # It's gonna be sets of seven cards needing classification; 
     # the five community cards and the two hole cards.
     # Return the five effective cards (i.e. what constitutes the hand) as well as the hand name.
     @staticmethod
-    def classify(cards, player=None):
+    def classify_(cards, player=None):
+        plays_board = False
         ordered = Hand.make_consecutive(cards)
         suitless = [card.rank for card in ordered]
 
@@ -451,7 +478,7 @@ class Hand:
         straight_index = Hand.get_highest_straight_index(pruned)
         has_straight = False
         if(straight_index != -1):
-            pruned = cards[straight_index:straight_index + 5]
+            pruned = pruned[straight_index:straight_index + 5]
             has_straight = True
 
         # Classify
@@ -504,5 +531,5 @@ class Hand:
             final_hand = kickers
 
 
-        return Hand(player, hand_id, final_hand, quads, threes, pairs, kickers)
+        return Hand(player, hand_id, final_hand, quads, threes, pairs, kickers, False)
     
