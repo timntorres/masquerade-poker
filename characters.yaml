@@ -3,7 +3,7 @@ characters:
     id: 0
     voice_index: 50
     traits: gruff, stubborn, and tough-talking
-    playstyle: loose and aggressive
+    playstyle: aggressive
     quotes:
       - I yam what I yam an' that's all I yam.
       - If we can't be frens, we'll be emenies.
@@ -25,7 +25,7 @@ characters:
     id: 2
     voice_index: 14
     traits: mysterious, unpredictable, and witty
-    playstyle: loose and tricky
+    playstyle: tricky
     quotes:
       - Are you feigning ineptitude or is your mind in a muddle?
       - No one plays fair if they think they can get away with it.
@@ -47,7 +47,7 @@ characters:
     id: 4
     voice_index: 16
     traits: benevolent, guilt-ridden, and suppressed
-    playstyle: tight and passive
+    playstyle: passive
     quotes:
       - My position is a very strange–a very strange one. It cannot be mended by talking.
       - I only ask for justice.
@@ -58,7 +58,7 @@ characters:
     id: 5
     voice_index: 7
     traits: cold, impulsive, and cruel
-    playstyle: loose and aggressive
+    playstyle: aggressive
     quotes:
       - Hiss!
       - I did not think you would have lied.
@@ -89,7 +89,7 @@ characters:
     id: 8
     voice_index: 19
     traits: unstable, brilliant, delusional
-    playstyle: cautious
+    playstyle: unpredictable
     quotes:
       - There can be no community between you and me; we are enemies.
       - How dangerous is the acquirement of knowledge.
@@ -100,7 +100,7 @@ characters:
     id: 80
     voice_index: 135
     traits: good-natured, simple, and wise
-    playstyle: tight and passive
+    playstyle: passive
     quotes:
       - A hug is always the right size.
       - I wasn't going to eat it. I was just going to taste it.
@@ -111,7 +111,7 @@ characters:
     id: 10
     voice_index: 119
     traits: pessimistic, gloomy, and melancholy
-    playstyle: loose and passive
+    playstyle: passive
     quotes:
       - Why bother?
       - It's not much of a tail, but I guess I'm sort of attached to it.
@@ -122,7 +122,7 @@ characters:
     id: 11
     voice_index: 82
     traits: high-energy, optimistic, and egotistical
-    playstyle: loose and aggressive
+    playstyle: aggressive
     quotes:
       - The wonderful thing about Tiggers is that I'm the only one!
       - Fun, fun, fun, fun, fun!
@@ -144,7 +144,7 @@ characters:
     id: 34
     voice_index: 10
     traits: mischievous, cheeky, callous
-    playstyle: loose and tricky
+    playstyle: tricky
     quotes:
       - Heh-heh-
       - Nnngh!
@@ -176,7 +176,7 @@ characters:
     id: 16
     voice_index: 103
     traits: cold-hearted, miserly, and greedy
-    playstyle: Old Man Coffee – tight, passive, trappy, extremely narrow preflop range
+    playstyle: trappy shark
     quotes:
       - What right have you to be merry? You’re poor enough.
       - Now, I’ll tell you what, my friend. I won't stand this any longer.
