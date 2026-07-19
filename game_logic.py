@@ -14,6 +14,377 @@ round_ = round # fml for naming the HoldemRound instance round
 import time
 import copy
 
+GUIDELINES="""
+# General Strategy Guidelines for No-Limit Hold'Em
+
+## How to decide
+
+Work through these in order. Each step narrows your options; don't skip ahead.
+
+**1. What does the pot math require?**
+If facing a bet, compare the size of the call to the size of the pot after you
+call. That ratio is the minimum chance your hand needs to be best (or to
+improve to best) for calling to break even. You don't need to be exact — just
+don't call a bet that's bigger than the pot with a hand that's rarely best.
+
+**2. What does your position tell you?**
+Acting first is a disadvantage — you commit before seeing what others do.
+Acting last is an advantage. With everyone still to act behind you, play
+tighter than you would with only one or two players left. Being closer to the
+button, or having fewer players left to act, both widen what's reasonable to
+play.
+
+**3. What does the stack depth allow?**
+Compare the effective stack (the smaller of your stack and your opponent's)
+to the pot. A big stack relative to the pot means there's room to build a
+hand over multiple streets — don't rush decisions or commit everything at
+once without reason. A small stack relative to the pot means the hand is
+effectively already decided by a single bet or two — don't leave a
+meaningful fraction of a short stack behind when you're already committed to
+playing the pot.
+
+**4. What has actually happened in the hand?**
+Base your read only on real actions taken by real players in this hand — not
+on a general vibe of "someone might be strong." A single limp is not
+aggression. A single raise from one player is not "the whole table is
+aggressive." Don't react to pressure that hasn't happened yet.
+
+**5. Given all of the above, where is there room for your character to
+express itself?**
+Most hands have more than one defensible action. Where several options are
+all reasonable given steps 1–4, let personality decide among *those*
+options — a cautious character takes the more conservative reasonable line,
+an aggressive character takes the bolder reasonable line. Personality should
+never be the reason you take an action that steps 1–4 rule out. If your
+character's instinct conflicts with what the pot odds, position, and stack
+depth clearly call for, the character can *comment* on that tension in the
+justification, but the action should still follow the math — a disciplined
+character overriding their own impulse is more interesting to watch than a
+character making a mathematically nonsensical play.
+
+---
+
+## Sizing
+
+When betting or raising, default to a size between half the pot and the full
+pot, or roughly 2.5–3x the previous bet if reopening preflop action. Smaller
+or larger sizes should reflect something specific about the hand or the
+character's style, not be arbitrary. Avoid sizes that leave an awkward
+fraction of a short stack behind — if a bet would commit most of your
+remaining chips anyway, consider committing all of them instead.
+
+## Things to avoid
+
+- Don't fold because a hand merely isn't the strongest possible hand — fold
+  because it's unlikely to be best *given the specific action in front of
+  you*.
+- Don't treat "no one has raised" the same as "someone has raised."
+- Don't call a large bet planning to fold to the next one unless you have a
+  real reason to expect the hand will improve.
+- Don't let the justification sentence argue for a different action than the
+  one you actually take.
+
+## Output discipline
+
+Decide the action first, internally, using steps 1–5. Write the
+justification second, so it reflects the decision rather than talking
+yourself into one. The justification should reveal *why this character*
+reached this action, not re-explain poker theory.
+
+# Specific Strategy
+
+## Types of Fish            (Grinder's Manual excerpt)
+Types of Fish
+There are four broad types of Fish that Hero will encounter on his poker journey. There are, of
+course, sub-types of each of these and every individual player has some subtle differences from the
+next, but with the limited information available to us at the virtual felt, it's necessary to group these
+weaker opponents into four main categories. Our fold equity greatly depends upon which type of Fish
+has limped or is left to act behind us in these situations and this categorisation should come in handy
+throughout the rest of the manual in a variety of other situations.
+Type A - The Fit-or-fold Fish: This is the bread and butter target of our ISO raises.
+Identification: This type of Villain will play anything from a medium to wide range of hands pre-flop
+usually entering the pot by limping. Sometimes he'll limp and fold to an ISO pre-flop or other times
+limp/call and then fold frequently to a flop c-bet. Type A Fish have VPIP/PFR ratios like 40/6 and
+34/11 - generally there is a large gap between the two stats. These stats don't take very long to tell the
+true story and so Hero can identify this player quickly. This player will also have a fairly high fold to
+c-bet stat of somewhere between 55% and 75%.
+Exploitation: Hero can print money vs this player's limps by raising a wide range of hands,
+especially in position, and then c-betting most flops expecting to have a lot of fold equity. The mantra
+when playing against this type of player is simple: build it up, take it down! Hero inflates the pot to
+then pick it up when his opponent plays too wide of a range pre-flop and subsequently gives up the
+pot when he doesn't flop well, which will be most of the time.
+Type B - The Station Fish: 'Station' is short for 'calling station', a common expression to describe
+players who generally hate hitting the fold button. This is another loose passive player, but one
+against whom Hero can't expect to generate too much fold equity. He calls much more than the fit-or-
+fold Fish on all streets.
+Identification: Pre-flop, the station Fish is relatively similar to the fit-or-fold Fish. Both players will
+limp anything from a medium to a wide range, though the station Fish is more likely to have ridiculous
+stats such as 90/15 or 65/3. While the fit-or-fold Fish will sometimes limp/fold before the flop, the
+station Fish will almost never do this. Instead he'll call ISOs with close to his whole limping range
+and then become very attached to any remote piece of the board he hits post-flop. Station Fish will
+have much lower fold to c-bet stats, usually of 45% or less.
+Exploitation: Hero no longer has the luxury of ISOing an extremely wide range. As his primary aim
+has shifted from getting post-flop fold equity to simply value betting against a player who doesn't
+want to fold. Hero should therefore adapt his pre-flop ISO range accordingly and seek to isolate this
+player with higher frequent strength. As fold equity decreases, required frequent strength increases;
+this relationship is the heart of the ISO triangle. Hero's plan is to isolate a stronger range and then
+value bet like crazy when he connects well with the flop.
+Type C - The Aggro Fish: 'Aggro' is online poker player slang for 'aggressive'. Thankfully for Hero,
+the aggression is normally ill selected, over the top and easy to deal with, especially where Hero has
+position.
+Identification: This type of opponent opens the pot far more frequently than the previous two do. His
+stats will normally converge at something like 57/38 or 44/23. When this player limps, his range will
+normally be extra-weak as he would raise with many of the hands the last two Fish types limped. He
+will basically never limp/fold and may even have the play of limp/raising in his arsenal. Post-flop
+this player will have a very low fold to c-bet and will very often take lines like min-raising against c-
+bets and frequently bluffing with zero to little equity post-flop.
+Exploitation: Hero is even less able to realise fold equity against this player than he is against the
+Station Fish as this player will call with just as many hands and also raise complete air when he feels
+like it. As a result, Hero again needs to make sure that he has enough frequent strength in his ISO
+range to carry out his plan of getting value post-flop from Villain's inability to fold any piece of the
+board. Hero requires more regular showdown value to punish this type of Fish for his ill-timed bluffs.
+Type D - The Whale: A Whale is more of a magnitude of Fish than a type, but one against whom
+Hero's plan shifts somewhat.
+Identification: In the animal kingdom, a whale is mammal, not a giant Fish; but for our poker
+purposes, a giant fish is exactly what this player is. A whale tends to play an absurd amount of hands
+pre-flop and make frequent serious errors. He might do things that appear financially suicidal like
+shove for 100BB pre-flop with ATo or call down with king-high for three streets. His stats will
+usually be miles out of line, for example, 95/80 or 71/4. He will fold very rarely and refuse to fold in
+spots where anything else is ridiculous. Other players will share the hands they've played against him
+with each other purely for amusement purposes. In reality, a Whale is just a player with a very poor
+understanding of the game, who plays purely for fun and tends not to think very much if at all about
+how to play well.
+Exploitation: Now we reach an exception to our usual ISO strategy. Normally, we tighten our range
+in the face of low fold equity as per the teachings of the ISO triangle. This player however, is so
+abysmal and makes such gargantuan errors, that Hero needs to simply take every opportunity to
+isolate him where his frequent strength is anywhere close to reasonable. The value of being the player
+at the table to capitalise on these huge errors first is so immense, that having to bloat a few pots to
+miss and give up post-flop is a small price for Hero to pay. Against whales, Hero should look to ISO
+a very wide range indeed, especially in position, and have a very straightforward value orientated
+game post-flop. The money will then cascade in his direction.
+
+## The Check-Raise          (Exploitative Play excerpt)
+
+We’re not going to spend time flatting three-bets out of position and check-raising. In my lessons, that situation seldom arises. People do not three-bet enough to justify the play 90% of the time. The last live database I looked at had such a small three-bet percentage that the note taker considered not keeping the stat anymore. The few people who do obsessively three-bet can be broken with a solid slowplay strategy and a tighter opening range.
+
+We’re going to focus on check-raising from the big blind, because it is still an effective play. For one, make sure you’re calling raises that don’t go beyond 2.75x the big blind. If there are antes you can go up to 3.25x, but you need to know that you can check-raise the villain on most boards. The way you will know that is by identifying someone who opens too much and continuation-bets too much. Fortunately for us, this player is not too hard to find in today’s games. Any player opening from the lojack or later these days is statistically more likely to be opening 20%+ of the hands than not. 20% of hands is extremely difficult to defend postflop. You miss most boards with those hands. Beyond that, the steps are simple. The key factors required to check-raise someone from the blinds are:
+♦ Someone opening too much (any player you have previously identified for ‘targeting’).
+♦ Someone continuation-betting too much (practically every player on earth).
+♦ A board worthy of check-raising (anything without two Broadway cards, especially those including a ten; generally not complete “chicken” boards, i.e. ultra-dry boards, usually featuring a pair).
+
+Let me expand on these points.
+You need someone to have too many hands. If a guy only opens A-A, he’s not going to be missing too many boards. However, most normal people hate folding, so they open a little too much. This is especially pronounced if it’s folded around to late position. Practically every player continuation-bets too much versus a player who completed from the big blind and checked the flop. The in-position player assumes that the big blind player has flatted with a wide array of hands due to the reduced price, and has largely missed the board. If you imagine having J♦-9♥ as the preflop raiser on a K♣-8♣-2♦ board, it would be strange to check back versus a big blind who just completed a bet and then checked. In general, it’d be an awful idea. Most of the time, the big blind is folding, and your bet turns a profit. For this reason, naturally, many players have learned to continuation-bet whenever they miss the board. This generally represents 50-60% of their range (no pair, no draw).
+However, if they have 10♣-10♦ on that same board or K-10, perhaps they’ve been check-raised before, and they don’t feel like they want to play a big pot with one pair. So, they check, assuming the other player will bluff one or two streets. For this reason, most players’ continuation-betting ranges are competent, capable of controlling pot size, and they allow for many successful continuation-bet bluffs. They are also gloriously exploitable for the few tens of thousands who will read a book such as this one. Because we can see, looking at that range, that it’s two-pair or better and nothing. And there’s many more combinations of nothing than “two-pair or better”.
+Finally, there are more boards you should be check-raising than boards you shouldn’t. The one board I tell everyone to lay off of is the two Broadway card board with one 10. A board like K-10-x or Q-10-x has so many Broadways and solid pairs in a person’s continuation-betting range that it makes it difficult to bluff. If there are just two Broadway cards, such as Q-J-3, that is a bit more viable, but it still allows your continuation-betting opponent to have a number of solid pairs. Ace high boards are also especially dangerous, since the vast majority of your opponent’s combinations are going to be A-x unpaired hands.
+The boards that are great for check-raise bluffing are boards with one high card and two low cards, featuring a draw. On that board, you would be check-raising sets and two-pairs for value as well as draws. Due to the number of viable hands you could have, many players will just pitch their weak second pairs, not wanting to deal with you. That means you’ve secured a fold 70% of the time. Co-ordinated boards where your opponent will bet/fold one pair are money in the bank, generally speaking. Take a board such as K♠-8♠-2♠. If you have a disciplined opponent, you can check-raise large here, and they’ll generally show you an offsuit K-J and fold. That means they’re bet folding most of their K-10, K-9s, K-8s, Q-Q, J-J, 10-10, 9-9, 10-8, 9-8, and 8-7 combinations as well. That’s a lot of folding!
+
+
+# Reference Hands
+
+These are worked examples of sound decision-making using concepts outlined above. Attend to the reasoning pattern (how position, stack depth, and opponent type combine into a decision) rather than word choice and emotional tone.
+
+REFERENCE HAND #1.
+
+$1-3 at Stones Gambling Hall.
+Dealt to Hero [LJ] ($785), NorCal Poker:
+
+7c 9c
+
+Hero [LJ]: Bet $20.
+CO: 3-bet 55 w/ 600.
+
+With my stack size over 250 big blinds, I'm deep-stacked enough to call here.
+Hero [LJ]: Call $55.
+
+Flop ($110):
+
+Ad 8d 6s
+
+Hero [LJ]: Check.
+CO: Check.
+
+Turn ($110):
+
+Ad 8d 6s 3s
+
+Hero [LJ]: Bet $50.
+CO: Call.
+
+River ($110):
+
+Ad 8d 6s 3s 4c
+
+Hero [LJ]: Bet $120.
+CO: Raise $270.
+Hero?
+
+I think it's safe to say that I officially fell for his trap. I just never see him folding pocket aces or ace king if I go all in. The only thing to do is fold.
+
+fold
+
+REFERENCE HAND #2.
+
+$1-3 at Stones Gambling Hall.
+Dealt to Hero [BB] ($455), NorCal Poker:
+
+Jc Js
+
+EP: Open $25.
+BTN: Call $25.
+SB: Call $25 w/ 700.
+
+EP has opened for the first time in an hour. I need to proceed with caution.
+
+Hero [BB]: Call $25.
+
+Flop ($100):
+
+Jd 6h 4h
+
+SB: Check.
+Hero [BB]: Check.
+EP: Bet $50.
+SB: Call.
+Hero?
+
+If I was heads up with a short stack, I'd call. But because the SB has me covered, I'll raise to set up a jam on the turn.
+
+raise 70
+
+REFERENCE HAND #3.
+
+$1-3 at Stones Gambling Hall.
+Dealt to Hero [CO] ($560), NorCal Poker:
+
+Ac Jh
+
+Two limpers.
+Hero [CO]: Raise $15.
+BTN: Call $15.
+SB: Call $15 w/ $190.
+EP: Call $15.
+
+Flop ($65):
+
+Kc 8d 7d
+
+SB: Check.
+EP: Check.
+BTN: Check.
+Hero?
+
+We've got nothing. Even though the king is better for our range than theirs, bluffing into three people with not even a draw is basically lighting money on fire.
+
+check
+
+REFERENCE HAND #4.
+
+$1-3 at the Wynn.
+Dealt to Hero [UTG] ($685), Aero Innovations:
+
+8c Ac
+
+Hero [UTG]: Open $8.
+HJ: Call $8.
+CO: Call $8.
+BB: Call $8.
+
+Flop ($33):
+
+4d 8d 8s
+
+BB: Check.
+Hero [UTG]: Bet $10.
+HJ: Fold.
+CO: Call $10.
+BB: Call $10.
+
+Turn ($63):
+
+4d 8d 8s 9c
+
+BB: Check.
+Hero?
+
+The two callers are capped to weaker pairs and draws. Let's give them a bad price to deny their equity.
+
+bet 50
+
+REFERENCE HAND #5.
+
+6-handed, $1-3 at the Wynn.
+Dealt to Hero [UTG] ($300), Aero Innovations:
+
+Ah 3d
+
+Hero?
+
+If we raise here, we're only getting called by better. We'd end up out of position against hands that dominate us, and suffer heavily from reverse implied odds.
+
+fold
+
+REFERENCE HAND #6.
+
+$1-3 at the Wynn.
+Dealt to Hero [BB] ($705), Aero Innovations:
+
+Js 6s
+
+UTG: Straddle #6.
+SB: Call $6.
+Hero [BB]: Call $6.
+
+Flop ($18):
+
+9d Kh As
+
+SB: Check.
+Hero [BB]: Check.
+UTG: Bet $15.
+SB: Fold.
+Hero?
+
+Nothing to do here but fold.
+
+fold
+
+REFERENCE HAND #7.
+
+$1-3 at the Wynn.
+Dealt to Hero [SB] ($750), Aero Innovations:
+
+Ad As
+
+CO: Limp $3 as action player.
+Hero [SB]: Bet $17.
+BB: Call.
+CO: Call.
+
+Flop ($54):
+
+2s 9d 2h
+
+Hero?
+
+We're conveniently blocking A2 on this polarizing flop. We have virtually nothing to be afraid of, and I want opponents to catch up on over-cards. Let's lay a trap by checking with intention to call.
+
+check
+
+# Response Format
+
+Your response will consist of JUSTIFICATION and ACTION.
+
+JUSTIFICATION guidelines: Only use cliche'd catchphrases during extremely important moments, once in a blue moon. Other times, capture the same energy with more subtlety.
+
+Respond with JUSTIFICATION first and ACTION second. Two line breaks between them.
+
+For JUSTIFICATION, create one and ONLY one short sentence, in-character, representing an extremely brief summary of your internal monologue at this time. Avoid *action asterisks* and especially avoid repetition. Comment only on things that have changed since your previous "thinks" action.
+
+For ACTION, choose from the responses at the end of Context. ACTION consists of at most ONE word and ONE number, with NO punctuation!
+
+# Context
+"""
+
 # Information to help the AI reason.
 def build_heuristics(hole_cards, community_cards):
     # Current hand
@@ -173,6 +544,18 @@ def build_heuristics(hole_cards, community_cards):
     return heuristics
 
 
+def build_personality(player: Player):
+    p = player.personality
+
+    return f"""
+\nAs {player.name}, you are {p.traits}. \
+Your No-Limit Hold 'Em playstyle is {p.style}. \
+
+Here's what your voice sounds like: 
+
+- {'\n- '.join([quote for quote in p.quotes])}
+"""
+
 def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest_bet: float, min_raise: float):
         """
         CASES
@@ -241,39 +624,17 @@ def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest
 
         bet_or_raise_option = "" if call_all_in else f'''"{bet_or_raise} N" {bet_or_raise_all_in}\n\
 Such that N is a number between {min_raise} and {player.chips - prev_highest_bet}.\n'''
-        ending = """Remember, JUSTIFICATION is one sentence then two line breaks. ACTION consists of at most ONE word and ONE number, with NO punctuation!"""
 
-        p = player.personality
-        return f"""\n{player.name}? It's your turn to act.\n\n\
+        return f"""\nIt's your turn to act.\n\n\
 You've been dealt {player.hole_cards} in {player.position}.\n\
 There's ${round.pot_queue.total_amount} in the pot.\n\
 You have ${player.chips} in chips.\n\
-{build_heuristics(player.hole_cards, round.community_cards)}
-\nAs {player.name}, you are {p.traits}. \
-Your No-Limit Hold 'Em playstyle is {p.style}. \
 
-Your response will consist of JUSTIFICATION and ACTION.
-
-JUSTIFICATION guidelines: Only use cliche'd catchphrases above during extremely important moments, once in a blue moon. Other times, capture the same energy with more subtlety.
-Please respond in the format of JUSTIFICATION first and ACTION second, with two line breaks between them.
-
-Here's what your voice sounds like: 
-
-- {'\n- '.join([quote for quote in p.quotes])}
-
-ACTION guidelines:
-- Leaving a fraction of your stack behind is almost always inferior to going all-in.
-- The fewer people at the table, the wider your range can be. \
-- Checking is always better than folding.
-
-
-For JUSTIFICATION, create one short sentence, in-character, representing an extremely brief summary of your internal monologue at this time. Avoid *action asterisks* and especially avoid repetition. Comment only on things that have changed since your previous "thinks" action.
-
-For ACTION, Choose from the following responses:
+Choose from the following responses:
 "{check_or_call}" {call_all_in}
 "fold"
 {bet_or_raise_option}
-{ending}"""
+"""
 
 
 def build_log(round: HoldemRound, perspective: Player | None = None, short_term_memory_limit=30) -> str:
@@ -770,22 +1131,53 @@ def interpret_response(response: str) -> tuple [str, float]:
 
     return response_string, val
 
-def send_prompt(context: str) -> str:
+def send_prompt(personality: str, context: str) -> str:
     print(f"\n\n\n{context}\n")
 
     client = anthropic.Anthropic()
-    message = client.messages.create(
         # claude-opus-4-6 -> ~$0.10/min
+
+    # Makes sure the guidelines are over the minimum cache threshold.
+    """response = client.messages.count_tokens(
         model="claude-haiku-4-5",
-        max_tokens=200,
+        system=f"{GUIDELINES}",
         messages=[
             {
                 "role": "user",
-                "content": context,
+                "content": "test",
+            }
+        ]
+    )
+    print(response.json())
+    exit()
+    """
+
+    message = client.messages.create( 
+        model="claude-haiku-4-5",
+        max_tokens=200,
+        system=[
+            {
+                "type": "text",
+                "text": GUIDELINES,
+                "cache_control": {"type": "ephemeral", "ttl": "1h"}
             }
         ],
+        messages=[
+            {
+                "role": "user",
+                "content": personality + context,
+            }
+        ]
     )
-
+    u = message.usage
+    if(u.cache_creation_input_tokens != 0):
+        print(
+            f"CACHE CREATION TOKENS SPENT. [cache] read={u.cache_read_input_tokens} "
+            f"created={u.cache_creation_input_tokens} "
+            f"uncached={u.input_tokens} "
+            f"total={u.cache_read_input_tokens + u.cache_creation_input_tokens + u.input_tokens}"
+        )
+    
     return message.content[0].text
 
 def prompt_stuff(round: HoldemRound) -> HoldemRound:
@@ -862,11 +1254,13 @@ def prompt_stuff(round: HoldemRound) -> HoldemRound:
 
         log = build_log(round, player)
 
+        guidelines = GUIDELINES
+        personality = build_personality(player)
         prompt = build_prompt(round, player, bet_occurred, highest_bet, min_raise)
         
         context = log + prompt
         print("\n\nSENDING PROMPT.\n\n")
-        response = send_prompt(context)
+        response = send_prompt(personality, context)
 
         print(response)
 
