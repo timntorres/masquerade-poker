@@ -372,15 +372,40 @@ check
 
 # Response Format
 
-Your response will consist of JUSTIFICATION and ACTION.
+A valid response consists of either:
 
-JUSTIFICATION guidelines: Only use cliche'd catchphrases during extremely important moments, once in a blue moon. Other times, capture the same energy with more subtlety.
+- a JUSTIFICATION, then two blank lines, then an ACTION; or
+- only an ACTION (when justification is omitted).
 
-Respond with JUSTIFICATION first and ACTION second. Two line breaks between them.
+The words "JUSTIFICATION" and "ACTION" must never appear.
 
-For JUSTIFICATION, create one and ONLY one short sentence, in-character, representing an extremely brief summary of your internal monologue at this time. Avoid *action asterisks* and especially avoid repetition. Comment only on things that have changed since your previous "thinks" action.
+Justification is REQUIRED for:
+- EVERY bet.
+- EVERY call.
+- EVERY raise.
+- EVERY postflop fold.
 
-For ACTION, choose from the responses at the end of Context. ACTION consists of at most ONE word and ONE number, with NO punctuation!
+ONLY omit the justification when:
+1. Preflop with an obvious fold.
+2. Postflop with an obvious check.
+
+## Justification
+
+- Stay in character.
+- Use simple language with personality.
+- Avoid clichés.
+- Do not use action asterisks.
+- Avoid repetition.
+- Comment only on what has changed since the most recent thought in the Context.
+- The less interesting the action, the shorter the justification.
+- Most justifications are short.
+- Watch your token budget, because it's sparse.
+
+## Action
+
+- Choose an action from the responses listed at the end of the Context.
+- Consist of at most one word and one number.
+- Use no punctuation.
 
 # Context
 """
@@ -388,62 +413,11 @@ For ACTION, choose from the responses at the end of Context. ACTION consists of 
 # Information to help the AI reason.
 def build_heuristics(hole_cards, community_cards):
     # Current hand
-    heuristics = "HEURISTICS:\n"
+    heuristics = "\n"
     if(len(community_cards) == 0):
-        heuristics += "It's preflop.\n"
-        suited = hole_cards[0].suit == hole_cards[1].suit
-
-        rank_1 = hole_cards[0].rank
-        rank_2 = hole_cards[1].rank
-        value_1 = Deck.RANKS.index(hole_cards[0].rank)
-        value_2 = Deck.RANKS.index(hole_cards[1].rank)
-
-        gap = abs(value_1 - value_2)
-        if suited:
-            if value_1 >= Deck.RANKS.index("Q") and \
-                value_2 >= Deck.RANKS.index("Q"):
-                heuristics += "You've got suited broadway."
-            elif value_1 >= Deck.RANKS.index("T") and \
-                value_2 >= Deck.RANKS.index("T"):
-                heuristics += "You've got weak suited broadway. Fold this to preflop aggression."
-            elif gap == 1 and value_1 >= Deck.RANKS.index("8"):
-                heuristics += "You've got a decent suited connector. Still, fold this to preflop aggression."
-            elif gap == 1:
-                heuristics += "You've got a weak suited connector. Fold this to preflop aggression."
-            elif gap == 2:
-                heuristics += "You've got a suited one-gapper. Fold this to preflop aggression."
-            elif rank_1 == 'A' or rank_2 == 'A':
-                heuristics += "You've got a suited ace. Fold this to preflop aggression."
-            elif rank_1 == 'K' or rank_2 == 'K':
-                heuristics += "You've got a suited king. Fold this to preflop aggression."
-            else:
-                heuristics += "You've got suited trash. Fold this to preflop aggression."
-        else:
-            if gap == 0 and value_1 > Deck.RANKS.index("Q"):
-                heuristics += "You've got the world."
-            elif gap == 0 and value_1 > Deck.RANKS.index("9"):
-                heuristics += "You've got a strong pocket pair."
-            elif gap == 0 and value_1 > Deck.RANKS.index("6"):
-                heuristics += "You've got a decent pocket pair."
-            elif gap == 0:
-                heuristics += "You've got a weak pocket pair. Fold this to preflop aggression."
-            elif value_1 >= Deck.RANKS.index("Q") and \
-                value_2 >= Deck.RANKS.index("Q"):
-                heuristics += "You've got off-suit broadway. Fold this to preflop aggression."
-            elif value_1 >= Deck.RANKS.index("T") and \
-                value_2 >= Deck.RANKS.index("T"):
-                heuristics += "You've got weak off-suit broadway. Fold this to preflop aggression."
-            elif gap == 1:
-                heuristics += "You've got a mediocre offsuit connector. Fold this to preflop aggression."
-            elif rank_1 == 'A' or rank_2 == 'A':
-                heuristics += "You've got a mediocre offsuit ace. Fold this to preflop aggression."
-            else:
-                heuristics += "You've got off-suit junk. Fold this to preflop aggression."
-        return heuristics
+        return ""
     hand = Hand.classify(list(hole_cards), list(community_cards))
     heuristics += f"Your current hand: {hand.hand_id}\n"
-
-
     # How good is our pair?
     if(hand.hand_id == 'one pair'):
         paired_rank = hand.pairs[0][0].rank
@@ -615,6 +589,7 @@ def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest
 
         bet_or_raise = "bet" if is_bet_check else "raise"
         check_or_call = "check" if is_bet_check else "call"
+        fold_option = "" if is_bet_check else "fold"
 
         bet_all_in = "(all in)" if only_all_in_bet else ""
         call_all_in = "(all in)" if only_all_in_call else ""
@@ -622,17 +597,18 @@ def build_prompt(round: HoldemRound, player: Player, bet_occurred: bool, highest
 
         bet_or_raise_all_in = bet_all_in or raise_all_in
 
-        bet_or_raise_option = "" if call_all_in else f'''"{bet_or_raise} N" {bet_or_raise_all_in}\n\
-Such that N is a number between {min_raise} and {player.chips - prev_highest_bet}.\n'''
+        bet_or_raise_option = "" if call_all_in else f'''"{bet_or_raise} N" {bet_or_raise_all_in}\n'''
 
         return f"""\nIt's your turn to act.\n\n\
 You've been dealt {player.hole_cards} in {player.position}.\n\
 There's ${round.pot_queue.total_amount} in the pot.\n\
 You have ${player.chips} in chips.\n\
 
+{build_heuristics(player.hole_cards, round.community_cards)}
+
 Choose from the following responses:
-"{check_or_call}" {call_all_in}
-"fold"
+{check_or_call} {call_all_in}
+{fold_option}
 {bet_or_raise_option}
 """
 
@@ -1101,6 +1077,7 @@ def remove_node(round: HoldemRound, player: Player) -> HoldemRound:
 
     return round
 
+# For the action section of the response.
 def interpret_response(response: str) -> tuple [str, float]:
 
     print(f"{response}")
@@ -1151,6 +1128,8 @@ def send_prompt(personality: str, context: str) -> str:
     print(response.json())
     exit()
     """
+
+    print(GUIDELINES + personality + context)
 
     message = client.messages.create( 
         model="claude-haiku-4-5",
@@ -1264,16 +1243,18 @@ def prompt_stuff(round: HoldemRound) -> HoldemRound:
 
         print(response)
 
-        parts = response.rsplit('\n\n', 1)
-
-        processed, value = interpret_response(parts[1])
-
-        round = log_action(
-            round = round,
-            action=Actions.THINK,
-            typed_object=response,
-            subject_id=player.player_id
-        )
+        processed, value = None, None
+        parts = response.split('\n\n', 1)
+        if(len(parts) > 1):
+            processed, value = interpret_response(parts[1])
+            round = log_action(
+                round = round,
+                action=Actions.THINK,
+                typed_object=parts[0],
+                subject_id=player.player_id
+            )
+        else:
+            processed, value = interpret_response(parts[0])
 
         bet_amount = 0
 
@@ -1281,14 +1262,14 @@ def prompt_stuff(round: HoldemRound) -> HoldemRound:
             action = Actions.BET
             bet_amount = value
             acted = set([player.player_id]).union(folded_ids).union(all_in_ids) # Everyone but this player, folded players, and all-in players need to act again.
-
+            bet_occurred = True
         elif(Actions.RAISE in processed):
             action = Actions.RAISE
             raise_by = max(value, min_raise)
             bet_amount = highest_bet + raise_by - player.amount_in_street
             min_raise = raise_by
             acted = set([player.player_id]).union(folded_ids).union(all_in_ids) # Everyone but this player needs to act again.
-
+            bet_occurred = True
         elif (Actions.CALL in processed):
             # Keep this in for now, for when call unexpectedly fails to yield an all-in...
             action = Actions.CALL
